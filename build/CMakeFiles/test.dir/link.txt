@@ -1,0 +1,1 @@
+/usr/bin/c++    -std=c++11 -O3 -DNDEBUG    -Wl,-rpath  -Wl,/usr/local/lib  -Wl,--enable-new-dtags CMakeFiles/test.dir/cpp/app/example/test.cc.o  -o test -rdynamic libgraph_api.a /usr/local/lib/libmpi.so -lboost_system -lboost_filesystem -lboost_program_options /usr/local/lib/libglog.so /usr/local/lib/libgflags.a -Wl,-rpath,/usr/local/lib 

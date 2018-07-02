@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/home/ubuntu/StrongSim/build",
+  "command": "/usr/bin/c++    -I/home/ubuntu/StrongSim -I/usr/local/include   -std=c++11 -pthread -O3 -DNDEBUG   -o CMakeFiles/test.dir/cpp/app/example/test.cc.o -c /home/ubuntu/StrongSim/cpp/app/example/test.cc",
+  "file": "/home/ubuntu/StrongSim/cpp/app/example/test.cc"
+},
+{
+  "directory": "/home/ubuntu/StrongSim/build",
+  "command": "/usr/bin/c++    -I/home/ubuntu/StrongSim -I/usr/local/include   -std=c++11 -pthread -O3 -DNDEBUG   -o CMakeFiles/graph_api.dir/cpp/time.cc.o -c /home/ubuntu/StrongSim/cpp/time.cc",
+  "file": "/home/ubuntu/StrongSim/cpp/time.cc"
+}
+]

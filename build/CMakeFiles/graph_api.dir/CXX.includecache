@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/ubuntu/StrongSim/cpp/time.cc
+time.h
+/home/ubuntu/StrongSim/cpp/time.h
+sys/time.h
+-
+
+/home/ubuntu/StrongSim/cpp/time.h
+

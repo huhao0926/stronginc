@@ -1,0 +1,2 @@
+/usr/bin/ar qc libgraph_api.a  CMakeFiles/graph_api.dir/cpp/time.cc.o
+/usr/bin/ranlib libgraph_api.a
