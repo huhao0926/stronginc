@@ -9,6 +9,9 @@
 #include "cpp/Fragment.h"
 #include "cpp/global.h"
 #include "cpp/MessageBuffer.h"
+   /**
+    *parallel find k-hop nodes from one node
+    */
 class Bfs_Singlekhop{
 public:
     Bfs_Singlekhop();
@@ -18,9 +21,13 @@ public:
     void bfs_singlekhopparallel(Fragment &fragment, Graph &dgraph,std::unordered_set<VertexID> &nodeset, VertexID root, int bound);
 
     bool is_continue();
-
+   /**
+    *partial evaluateion find d_hop nodes in each process
+    */
     void pEval(Fragment &fragment, Graph &dgraph,std::unordered_set<VertexID> &nodeset, std::unordered_map<VertexID,int> &DistInf, VertexID root, int bound);
-
+   /**
+    *incremental evaluateion find d_hop nodes in each process by messages exchange
+    */
     void incEval(Fragment &fragment, Graph &dgraph,std::unordered_set<VertexID> &nodeset, std::unordered_map<VertexID,int> &DistInf, VertexID root, int bound);
 
     void out_global_result(Fragment &fragment, std::unordered_set<VertexID> &nodeset);

@@ -331,39 +331,39 @@ obinstream& operator>>(obinstream& m, std::string& str) {
 //}
 
 //FIXME: all the codes below may be bugy
-/*
+
 // serialization of Vertex
-template<class VD>
-ibinstream &operator <<(ibinstream &m, const Vertex<VD> &v) {
-	m << v.id;
-	m << v.attr;
+//template<class VD>
+ibinstream &operator <<(ibinstream &m, const Vertex &v) {
+	m << v.id_;
+	m << v.label_;
 	return m;
 }
 
-template<class VD>
-obinstream &operator >>(obinstream &m, Vertex<VD> &v) {
-	m >> v.id;
-	m >> v.attr;
+//template<class VD>
+obinstream &operator >>(obinstream &m, Vertex &v) {
+	m >> v.id_;
+	m >> v.label_;
 	return m;
 }
 
 // serialization of Edge
-template<class ED>
-ibinstream &operator <<(ibinstream &m, const Edge<ED> &e) {
-	m << e.src;
-	m << e.dst;
-	m << e.attr;
+//template<class ED>
+ibinstream &operator <<(ibinstream &m, const Edge &e) {
+	m << e.src_;
+	m << e.dst_;
+	m << e.attr_;
 	return m;
 }
 
-template<class ED>
-obinstream &operator >>(obinstream &m, Edge<ED> &e) {
-	m >> e.src;
-	m >> e.dst;
-	m >> e.attr;
+//template<class ED>
+obinstream &operator >>(obinstream &m, Edge &e) {
+	m >> e.src_;
+	m >> e.dst_;
+	m >> e.attr_;
 	return m;
 }
-*/
+
 // serialization of PairMessage
 //template<class T>
 //ibinstream &operator <<(ibinstream &m, const PairMessage<T> &message) {

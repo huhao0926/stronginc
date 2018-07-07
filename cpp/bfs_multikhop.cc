@@ -19,7 +19,6 @@ out_global_result(fragment,nodeset);
 //assemble_result(nodeset);
 }
 
-
 void Bfs_Multikhop::pEval(Fragment &fragment, Graph &dgraph,std::unordered_set<VertexID> &nodeset, std::unordered_map<VertexID,int> &DistInf, std::unordered_set<VertexID> &root, int bound){
 std::queue<std::pair<VertexID,int>> que;
 for (auto v : root){
@@ -113,7 +112,6 @@ bool Bfs_Multikhop::is_continue(){
       return false;
     }
 }
-
 
 void Bfs_Multikhop::out_global_result(Fragment &fragment, std::unordered_set<VertexID> &nodeset){
     std::unordered_set<VertexID> tmp_set;

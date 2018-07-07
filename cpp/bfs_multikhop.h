@@ -9,6 +9,9 @@
 #include "cpp/Fragment.h"
 #include "cpp/global.h"
 #include "cpp/MessageBuffer.h"
+/**
+    *parallel find d_hop nodes from a node set
+*/
 class Bfs_Multikhop{
 public:
     Bfs_Multikhop();
@@ -18,11 +21,17 @@ public:
     void bfs_multikhopparallel(Fragment &fragment, Graph &dgraph,std::unordered_set<VertexID> &nodeset, std::unordered_set<VertexID> &root, int bound);
 
     bool is_continue();
-
+   /**
+    *partial evaluateion find d_hop nodes in each process
+    */
     void pEval(Fragment &fragment, Graph &dgraph,std::unordered_set<VertexID> &nodeset, std::unordered_map<VertexID,int> &DistInf, std::unordered_set<VertexID> &root, int bound);
-
+   /**
+    *incremental evaluateion find d_hop nodes in each process
+    */
     void incEval(Fragment &fragment, Graph &dgraph,std::unordered_set<VertexID> &nodeset, std::unordered_map<VertexID,int> &DistInf, std::unordered_set<VertexID> &root, int bound);
-
+   /**
+    *change each local result id to global id
+    */
     void out_global_result(Fragment &fragment, std::unordered_set<VertexID> &nodeset);
 
     std::unordered_set<VertexID> assemble_result(std::unordered_set<VertexID> &nodeset);

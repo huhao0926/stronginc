@@ -124,7 +124,7 @@
 
   void DualInc::incremental_addedges(Graph &dgraph,Graph &qgraph,
                            std::unordered_map<VertexID, std::unordered_set<VertexID>> &dsim,
-                           std::vector<std::pair<VertexID,VertexID>> &add_edges){
+                           std::set<std::pair<VertexID,VertexID>> &add_edges){
         std::set<std::pair<VertexID,VertexID>> candidate_node;
         std::unordered_map<VertexID, std::unordered_set<VertexID>> aff_node;
         for(auto u : qgraph.GetAllVerticesID()){
@@ -265,7 +265,7 @@
 
   void DualInc::incremental_removeedgs(Graph &dgraph,Graph &qgraph,
                            std::unordered_map<VertexID, std::unordered_set<VertexID>> &dsim,
-                           std::vector<std::pair<VertexID,VertexID>> &rm_edges){
+                           std::set<std::pair<VertexID,VertexID>> &rm_edges){
         std::unordered_set<VertexID> view_nodes;
         for (auto u :qgraph.GetAllVerticesID()){
             for(auto v :dsim[u]){
@@ -329,7 +329,7 @@
 
   void DualInc::dual_incremental(Graph &dgraph,Graph &qgraph,
                           std::unordered_map<VertexID, std::unordered_set<VertexID>> &dsim,
-                          std::vector<std::pair<VertexID,VertexID>> &add_edges,std::vector<std::pair<VertexID,VertexID>> &rm_edges){
+                          std::set<std::pair<VertexID,VertexID>> &add_edges,std::set<std::pair<VertexID,VertexID>> &rm_edges){
           for(auto e :rm_edges){
               dgraph.RemoveEdge(Edge(e.first,e.second,1));
           }

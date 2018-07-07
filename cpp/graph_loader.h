@@ -14,7 +14,9 @@
 #include "cpp/edge.h"
 #include "cpp/graph.h"
 #include "cpp/io/io_local.h"
-
+/**
+  *load graph
+  */
 class GraphLoader {
  public:
   GraphLoader();

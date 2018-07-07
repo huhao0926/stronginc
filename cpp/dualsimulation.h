@@ -5,6 +5,9 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "cpp/graphapi.h"
+ /**
+  * algorithm for dualsimulation
+  */
 class DualSim {
  public:
   DualSim();

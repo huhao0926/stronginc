@@ -9,6 +9,9 @@
 #include "cpp/global.h"
 #include "cpp/vertex.h"
 #include "cpp/edge.h"
+/**
+  * load each partial graph for process
+  */
 class FragmentLoader {
     public:
         FragmentLoader();

@@ -37,7 +37,7 @@ class Edge {
     return (this->src_ == edge.src_) && (this->dst_ == edge.dst_);
   }
 
- private:
+ public:
   VertexID src_, dst_;
   EdgeLabel attr_;
 };

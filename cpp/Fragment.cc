@@ -175,3 +175,44 @@ const std::bitset<NUM_FRAGMENTS> Fragment::getMsgThroughDest(const VertexID gvid
 const bool Fragment::has_vertex(const VertexID gvid) const{
     return global2local.find(gvid)!=global2local.end();
 }
+
+void Fragment::update_fragment(Graph &graph,std::vector<Edge> &add_edges,std::vector<Edge> &rm_edges, std::vector<Vertex> &add_vertices){
+    int tmp_num_vertices = graph.GetNumVertices();
+    for(int i=0;i<add_vertices.size(); ++i){
+        VertexID gvid = add_vertices[i].id();
+        if(global2local.find(gvid) == global2local.end()){
+            graph.AddVertex(add_vertices[i]);
+            local2global[tmp_num_vertices] = gvid;
+            global2local[gvid] = tmp_num_vertices;
+            tmp_num_vertices++;
+        }
+    }
+    for(auto edge :add_edges){
+        graph.AddEdge(Edge(global2local[edge.src()], global2local[edge.dst()], edge.attr()));
+    }
+    for(auto edge: rm_edges){
+        graph.RemoveEdge(Edge(global2local[edge.src()], global2local[edge.dst()], edge.attr()));
+    }
+    graph.RebuildGraphProperties();
+}
+
+void Fragment::update_fragment(Graph &graph,std::unordered_set<Edge> &add_edges, std::unordered_set<Edge> &rm_edges, std::unordered_set<Vertex> &vertices){
+    int tmp_num_vertices = graph.GetNumVertices();
+    for(auto vertex : vertices){
+        VertexID gvid = vertex.id();
+        if(global2local.find(gvid) == global2local.end()){
+            graph.AddVertex(vertex);
+            local2global[tmp_num_vertices] = gvid;
+            global2local[gvid] = tmp_num_vertices;
+            outerVertices.insert(gvid);
+            tmp_num_vertices++;
+        }
+    }
+    for(auto edge : add_edges){
+        graph.AddEdge(Edge(global2local[edge.src()], global2local[edge.dst()], edge.attr()));
+    }
+    for(auto edge: rm_edges){
+        graph.RemoveEdge(Edge(global2local[edge.src()], global2local[edge.dst()], edge.attr()));
+    }
+    graph.RebuildGraphProperties();
+}

@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include "cpp/global.h"
 #include "cpp/PairMessage.hpp"
+#include "cpp/vertex.h"
+#include "cpp/edge.h"
 
 class ibinstream {
 private:
@@ -181,13 +183,13 @@ obinstream& operator>>(obinstream& m, T*& p) {
 	return m >> (*p);
 }
 
-/*
+
 template<class T>
 obinstream& operator>>(obinstream& m, T& p) {
 	p=*(T*) m.raw_bytes(sizeof(T));
 	return m;
 }
-*/
+
 
 
 template<class T>
@@ -261,55 +263,27 @@ obinstream& operator>>(obinstream& m, std::unordered_set<T>& v)
 }
 
 //FIXME: all the codes below may be bugy
-/*
-// serialization of Vertex
-template<class VD>
-ibinstream &operator <<(ibinstream &m, const Vertex<VD> &v) {
-	m << v.id;
-	m << v.attr;
-	return m;
-}
 
-template<class VD>
-obinstream &operator >>(obinstream &m, Vertex<VD> &v) {
-	m >> v.id;
-	m >> v.attr;
-	return m;
-}
+// serialization of Vertex
+//template<class VD>
+ibinstream &operator <<(ibinstream &m, const Vertex &v);
+
+//template<class VD>
+obinstream &operator >>(obinstream &m, Vertex &v);
 
 // serialization of Edge
-template<class ED>
-ibinstream &operator <<(ibinstream &m, const Edge<ED> &e) {
-	m << e.src;
-	m << e.dst;
-	m << e.attr;
-	return m;
-}
+//template<class ED>
+ibinstream &operator <<(ibinstream &m, const Edge &e);
 
-template<class ED>
-obinstream &operator >>(obinstream &m, Edge<ED> &e) {
-	m >> e.src;
-	m >> e.dst;
-	m >> e.attr;
-	return m;
-}
-*/
+//template<class ED>
+obinstream &operator >>(obinstream &m, Edge &e);
+
 //serialization of PairMessage
 template<class T>
-ibinstream &operator <<(ibinstream &m, const PairMessage<T> &message) {
-	m << message.u;
-	m << message.val;
-	return m;
-}
+ibinstream &operator <<(ibinstream &m, const PairMessage<T> &message);
 
 template<class T>
-obinstream &operator >>(obinstream &m, PairMessage<T> &message) {
-	VertexID u;
-	T val;
-	m >> message.u;
-	m >> message.val;
-	return m;
-}
+obinstream &operator >>(obinstream &m, PairMessage<T> &message);
 /*
 template<class VD, class ED>
 obinstream &operator >>(obinstream &m, Query<VD, ED> &q) {

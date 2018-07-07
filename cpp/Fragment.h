@@ -13,6 +13,9 @@
 #include <vector>
 #include <utility>
 //#include <map>
+/**
+  * a class record each fragment graph and processor communication information
+  */
 class Fragment{
 public :
     Fragment();
@@ -48,6 +51,10 @@ public :
 
 	const bool has_vertex(const VertexID gvid) const;
 
+	void update_fragment(Graph &graph,std::vector<Edge> &add_edges, std::vector<Edge> &rm_edges, std::vector<Vertex> &vertices);
+
+	void update_fragment(Graph &graph,std::unordered_set<Edge> &add_edges, std::unordered_set<Edge> &rm_edges, std::unordered_set<Vertex> &vertices);
+
 private :
        int numVertices;
        int numEdges;
@@ -57,6 +64,6 @@ private :
        std::unordered_set<VertexID> innerVertices;
 	   std::unordered_set<VertexID> outerVertices;
 	   int FID;
-	   std::unordered_map<VertexID, std::bitset<NUM_FRAGMENTS>> msgThroughDest;
+	   std::unordered_map<VertexID, std::bitset<NUM_FRAGMENTS>> msgThroughDest;//recored meassage should send to process's id
 };
 #endif //CPP_FRAGMENT_H_

@@ -26,9 +26,33 @@ class Vertex {
     return label_;
   }
 
- private:
+  bool operator<(const Vertex &v) const {
+    return id_ < v.id_;
+  }
+
+  bool operator== (const Vertex & v) const {
+    return (this->id_ == v.id_);
+  }
+
+ public:
   VertexID id_;
   VertexLabel label_;
 };
+
+namespace std
+{
+  template<>
+    struct hash<Vertex>
+    {
+      size_t
+      operator()(const Vertex & v) const
+      {
+        size_t seed = 0;
+        hash<int> h;
+          seed ^= h(v.id()) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+          return seed;
+      }
+    };
+}
 
 #endif //CPP_EDGE_H_

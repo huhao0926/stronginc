@@ -8,7 +8,9 @@
 #include "cpp/Fragment.h"
 #include "cpp/global.h"
 #include "cpp/MessageBuffer.h"
-
+ /**
+  * algorithm for parallel  dual simualation
+  */
 class Dual_Parallel{
 public:
     Dual_Parallel();

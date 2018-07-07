@@ -7,8 +7,6 @@ public:
     Dual_Incparallel();
 
     ~Dual_Incparallel();
-
-
 private:
     int continue_run = 0;
 

@@ -1,10 +1,3 @@
-/*
- * communication.h
- *
- *  Created on: 11 Apr 2016
- *      Author: yecol
- */
-
 #ifndef CORE_COMMUNICATION_H_
 #define CORE_COMMUNICATION_H_
 
@@ -78,7 +71,7 @@ void all_to_all(std::vector <T> &to_exchange, unsigned tag = 0) {
     int np = get_num_workers();
     int me = get_worker_id();
     for (int i = 0; i < np; i++) {
-        int partner = (i - me + np) % np;//这个地方其实我很懵，大于也好，小于也好，根本不能平均分配，意义在哪？？？？？？？？？？？？
+        int partner = (i - me + np) % np;
         if (me != partner) {
             if (me < partner) {
                 StartTimer(SERIALIZATION_TIMER);

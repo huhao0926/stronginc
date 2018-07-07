@@ -8,13 +8,39 @@
 #include "cpp/strongr.h"
 #include "cpp/dual_incremental.h"
 #include "cpp/ball_view.h"
+#include "cpp/util.h"
+#include "cpp/dualsimulation.h"
 class StrongInc{
 public:
     StrongInc();
 
     ~StrongInc();
+    template<class T>
+    std::unordered_set<T> diff(const std::unordered_set<T> &a, const std::unordered_set<T>& b) {
+		std::unordered_set<T> ret;
+		for (auto ele : a) {
+			if (b.find(ele) == b.end()) {
+				ret.insert(ele);
+			}
+		}
+		return ret;
+	}
 
-    void find_affected_center_area(Graph &dgraph,std::set<std::pair<VertexID,VertexID>> &incedges,int d_hop,std::unordered_set<VertexID> &result);
+    template<class T>
+    std::unordered_set<T> intersection(const std::unordered_set<T> &a, const std::unordered_set<T>& b) {
+		std::unordered_set<T> ret;
+		for (auto ele : a) {
+			if (b.find(ele) != b.end()) {
+				ret.insert(ele);
+			}
+		}
+		return ret;
+	}
+
+    void find_affected_center_area(Graph &dgraph,std::set<std::pair<VertexID,VertexID>> &add_edges,
+                                                 std::set<std::pair<VertexID,VertexID>> &rm_edges,
+                                                 int d_hop,
+                                                 std::unordered_set<VertexID> &result);
 
       /**
        calculate diameter for qgraph
@@ -63,13 +89,13 @@ public:
 
       void  recalculate_incrementl_dual(Graph &dgraph, Graph &qgraph,
                                       std::unordered_map<VertexID,std::unordered_set<VertexID>> &dsim,
-                                      std::vector<std::pair<VertexID,VertexID>> &add_edges,
-                                      std::vector<std::pair<VertexID,VertexID>> &rm_edges);
+                                      std::set<std::pair<VertexID,VertexID>> &add_edges,
+                                      std::set<std::pair<VertexID,VertexID>> &rm_edges);
 
     void strong_simulation_inc(Graph &dgraph, Graph &qgraph,
                                       std::unordered_map<VertexID,std::unordered_set<VertexID>> &dsim,
                                       std::vector<StrongR> &strong_r,
-                                      std::vector<std::pair<VertexID,VertexID>> &add_edges,
-                                      std::vector<std::pair<VertexID,VertexID>> &rm_edges);
+                                      std::set<std::pair<VertexID,VertexID>> &add_edges,
+                                      std::set<std::pair<VertexID,VertexID>> &rm_edges);
 };
 #endif //CPP_STRONGSIMULATION_INC_H_

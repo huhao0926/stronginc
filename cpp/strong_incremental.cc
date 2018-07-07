@@ -3,11 +3,22 @@ StrongInc::StrongInc(){}
 
 StrongInc::~StrongInc(){}
 
-void StrongInc::find_affected_center_area(Graph &dgraph,std::set<std::pair<VertexID,VertexID>> &incedges,int d_hop,std::unordered_set<VertexID> &result){
+void StrongInc::find_affected_center_area(Graph &dgraph,std::set<std::pair<VertexID,VertexID>> &add_edges,
+                                                 std::set<std::pair<VertexID,VertexID>> &rm_edges,
+                                                 int d_hop,
+                                                 std::unordered_set<VertexID> &result){
     std::unordered_set<VertexID> incedges_node;
-    for(auto e:incedges){
+    for(auto e:add_edges){
+        if(rm_edges.find(e) == rm_edges.end()){
         incedges_node.insert(e.first);
         incedges_node.insert(e.second);
+        }
+    }
+    for(auto e:rm_edges){
+        if(add_edges.find(e) == add_edges.end()){
+         incedges_node.insert(e.first);
+        incedges_node.insert(e.second);
+        }
     }
     dgraph.find_hop_nodes(incedges_node,d_hop,result);
 }
@@ -265,8 +276,8 @@ void StrongInc::print_ball_info(Graph &qgraph,std::unordered_map<VertexID, std::
 
 void  StrongInc::recalculate_incrementl_dual(Graph &dgraph, Graph &qgraph,
                                       std::unordered_map<VertexID,std::unordered_set<VertexID>> &dsim,
-                                      std::vector<std::pair<VertexID,VertexID>> &add_edges,
-                                      std::vector<std::pair<VertexID,VertexID>> &rm_edges){
+                                      std::set<std::pair<VertexID,VertexID>> &add_edges,
+                                      std::set<std::pair<VertexID,VertexID>> &rm_edges){
           DualInc dualinc;
           for (auto e:add_edges){
              dgraph.AddEdge(Edge(e.first,e.second,1));
@@ -282,41 +293,44 @@ void  StrongInc::recalculate_incrementl_dual(Graph &dgraph, Graph &qgraph,
   void StrongInc::strong_simulation_inc(Graph &dgraph, Graph &qgraph,
                                       std::unordered_map<VertexID,std::unordered_set<VertexID>> &dsim,
                                       std::vector<StrongR> &strong_r,
-                                      std::vector<std::pair<VertexID,VertexID>> &add_edges,
-                                      std::vector<std::pair<VertexID,VertexID>> &rm_edges){
+                                      std::set<std::pair<VertexID,VertexID>> &add_edges,
+                                      std::set<std::pair<VertexID,VertexID>> &rm_edges){
           /**
            *calculate qgaraph diameter
           */
+          std::vector<StrongR> max_result;
           int d_Q = cal_diameter_qgraph(qgraph);
-          std::set<std::pair<VertexID,VertexID>> incedges;
-          for (auto e :add_edges){
-//              if(rm_edges.find(e) == rm_edges.end()){
-                  incedges.insert(e);
-//              }
-          }
-//
-          for(auto e:rm_edges){
-//              if(add_edges.find(e) == add_edges.end()){
-                  incedges.insert(e);
-//              }
-          }
-          std::unordered_set<VertexID> affected_center;
-          find_affected_center_area(dgraph,incedges,d_Q,affected_center);
+          std::unordered_map<VertexID, std::unordered_set<VertexID>> global_sim;
           recalculate_incrementl_dual(dgraph,qgraph,dsim,add_edges,rm_edges);
-          std::vector<StrongR> inc_result;
-          for (auto w : dgraph.GetAllVerticesID()) {
+
+          std::unordered_set<VertexID> affected_center_nodes;
+          find_affected_center_area(dgraph,add_edges,rm_edges,d_Q,affected_center_nodes);
+
+          std::unordered_set<VertexID> max_dual_set;
+          for(auto u:qgraph.GetAllVerticesID()){
+              for(auto v :dsim[u]){
+                  max_dual_set.insert(v);
+              }
+          }
+          affected_center_nodes = intersection(affected_center_nodes,max_dual_set);
+
+          int i=0;
+           clock_t stime,etime;
+             stime =clock();
+          for (auto w : max_dual_set) {
               /**
                * calculate ball for center w if w if a valid center
                */
-              if (valid_sim_w(qgraph,dsim,w)){
-                   if(affected_center.find(w) ==affected_center.end()){
-                       for(int i=0;i<strong_r.size();++i){
-                           if(strong_r[i].center()==w){
-                               inc_result.push_back(strong_r[i]);
-                           }
-                        }
-                   continue;
-               }
+//              if (valid_sim_w(qgraph,dsim,w)){
+              if (affected_center_nodes.find(w) == affected_center_nodes.end()){
+                 for(auto strong_ball:strong_r){
+                     if(strong_ball.center()==w){
+                          max_result.push_back(strong_ball);
+                     }
+                 }
+
+                  continue;
+              }
                clock_t start,end;
                start =clock();
               /**
@@ -364,20 +378,17 @@ void  StrongInc::recalculate_incrementl_dual(Graph &dgraph, Graph &qgraph,
 
               extract_max_pg(refined_ball_view,dgraph,qgraph, w,S_w);
 
-              inc_result.emplace_back(w,S_w);
+              max_result.emplace_back(w,S_w);
 //              print_ball_info(qgraph,S_w,w);
+//              break;
              // std::cout<<"calculate one ball time "<<(float)(end-start)/CLOCKS_PER_SEC<<"s"<<std::endl;
-              }
+//              }
           }
+          etime=clock();
           strong_r.clear();
-          for(int i=0;i<inc_result.size();++i){
-              strong_r.push_back(inc_result[i]);
+          for(auto strong_ball :max_result){
+              strong_r.push_back(strong_ball);
           }
-
-          for(auto e:rm_edges){
-              dgraph.AddEdge(Edge(e.first,e.second,1));
-          }
-          for (auto e:add_edges){
-             dgraph.RemoveEdge(Edge(e.first,e.second,1));
-          }
+         // std::cout<<"inc strong "<< (float)(etime-stime)/CLOCKS_PER_SEC<<std::endl;
+//          return max_result;
       }
