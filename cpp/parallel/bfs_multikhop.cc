@@ -15,7 +15,8 @@ while (is_continue()){
     worker_barrier();
 }
 worker_barrier();
-//out_global_result(fragment,nodeset);
+out_global_result(fragment,nodeset);
+worker_barrier();
 //assemble_result(nodeset);
 }
 

@@ -497,6 +497,8 @@ void Graph::RemoveEdge(const Edge &e) {
 }
 
 void Graph::RebuildGraphProperties() {
+  num_vertices_ = num_vertices(*graph_);
+  num_edges_ =  num_edges(*graph_);
   vertex_index_map_ = boost::get(boost::vertex_index, *graph_);
   edge_data_map_ = std::unique_ptr<EdgeDataMap>(new EdgeDataMap(
       boost::get(boost::edge_weight, *graph_)));

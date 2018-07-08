@@ -209,10 +209,21 @@ void Fragment::update_fragment(Graph &graph,std::unordered_set<Edge> &add_edges,
         }
     }
     for(auto edge : add_edges){
-        graph.AddEdge(Edge(global2local[edge.src()], global2local[edge.dst()], edge.attr()));
+        VertexID src = edge.src();
+        VertexID dst = edge.dst();
+        if(global2local.find(src)!=global2local.end() && global2local.find(dst) != global2local.end()){
+//        if(graph.ExistEdge(global2local[edge.src()],global2local[edge.dst()])){
+//            continue;
+//        }
+            graph.AddEdge(Edge(global2local[src], global2local[dst], edge.attr()));
+        }
     }
     for(auto edge: rm_edges){
-        graph.RemoveEdge(Edge(global2local[edge.src()], global2local[edge.dst()], edge.attr()));
+        VertexID src = edge.src();
+        VertexID dst = edge.dst();
+        if(global2local.find(src)!=global2local.end() && global2local.find(dst) != global2local.end()){
+            graph.RemoveEdge(Edge(global2local[edge.src()], global2local[edge.dst()], edge.attr()));
+        }
     }
     graph.RebuildGraphProperties();
 }

@@ -117,7 +117,7 @@ void save_grape_file(Graph &qgraph, const std::string &v_file, const std::string
 	out_efile.close();
 }
 
-bool dual_the_same(Graph &qgraph,  std::unordered_map<VertexID, std::unordered_set<VertexID>> &direct_sim,  std::unordered_map<VertexID, std::unordered_set<VertexID>> &incdsim){
+bool dual_the_same(Graph &qgraph,   std::unordered_map<VertexID, std::unordered_set<VertexID>> &direct_sim,   std::unordered_map<VertexID, std::unordered_set<VertexID>> &incdsim){
    for (auto u:qgraph.GetAllVerticesID()){
     if(direct_sim[u].size()!=incdsim[u].size()){
     return false;

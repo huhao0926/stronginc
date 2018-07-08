@@ -648,28 +648,7 @@ template<class T>
 //  }
  }
 
- void test_parallel_strong(){
-  Graph dgraph,fragmentgraph,qgraph;
-  FragmentLoader fragmentloader;
-  std::string v_file  ="../data/synmtic.v";
-  std::string e_file = "../data/synmtic.e";
-  std::string r_file = "../data/synmtic.r";
 
-  GraphLoader dgraph_loader,qgraph_loader;
-  dgraph_loader.LoadGraph(dgraph,v_file,e_file);
-
-  Fragment fragment(fragmentgraph,v_file,e_file,r_file);
- int index = 1;
-   while (index <2){
-      std::string qv_file =  "../data/synmticquery/q"+std::to_string(index)+".v";
-      std::string qe_file = "../data/synmticquery/q"+std::to_string(index)+".e";
-      qgraph_loader.LoadGraph(qgraph,qv_file,qe_file);
-     int d_Q = cal_diameter_qgraph(qgraph);
-     StrongparallelInc strongparallelinc;
-     strongparallelinc.update_fragment_inc(fragment,fragmentgraph,d_Q);
-  index += 1;
-  }
- }
 };
 
 
@@ -684,8 +663,8 @@ int main(int argc, char *argv[]) {
   Generate_Query geratequery;
 //  geratequery.test_generate_center_outsidecenter_edges();
 //  geratequery.generate_affected_center(query_index);
-//  geratequery.generate_outside_center(query_index);
-  geratequery.test_parallel_strong();
+  geratequery.generate_outside_center(query_index);
+//  geratequery.test_parallel_strong();
 
   worker_finalize();
   return 0;

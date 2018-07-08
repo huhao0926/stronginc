@@ -268,8 +268,8 @@ std::vector<StrongR> StrongSim::strong_simulation_sim(Graph &dgraph, Graph &qgra
           dualsim.dual_simulation(dgraph,qgraph,global_sim,inital_sim);
 //          std::cout<<"dual "<<(float)(end1-start1)/CLOCKS_PER_SEC<<std::endl;
           int i=0;
-                        clock_t stime,etime;
-               stime =clock();
+          clock_t stime,etime;
+          stime =clock();
           for (auto w : dgraph.GetAllVerticesID()) {
               /**
                * calculate ball for center w if w if a valid center
@@ -323,7 +323,7 @@ std::vector<StrongR> StrongSim::strong_simulation_sim(Graph &dgraph, Graph &qgra
               extract_max_pg(refined_ball_view,dgraph,qgraph, w,S_w);
 
               max_result.emplace_back(w,S_w);
-              print_ball_info(qgraph,S_w,w);
+//              print_ball_info(qgraph,S_w,w);
 //              break;
              // std::cout<<"calculate one ball time "<<(float)(end-start)/CLOCKS_PER_SEC<<"s"<<std::endl;
               }

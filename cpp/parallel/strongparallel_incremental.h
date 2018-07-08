@@ -13,7 +13,7 @@
 #include "cpp/serial/dualsimulation.h"
 #include "cpp/core/strongr.h"
 #include "cpp/core/ball_view.h"
-
+#include "cpp/serial/dual_incremental.h"
 class StrongparallelInc{
 public:
     StrongparallelInc();
@@ -60,7 +60,11 @@ template<class T>
 
     std::unordered_set<VertexID> find_affected_area(Fragment& fragment, Graph& dgraph, std::set<std::pair<VertexID,VertexID>> &add_edges,std::set<std::pair<VertexID,VertexID>> &rm_edges,int d_Q);
 
-    void update_fragment_inc(Fragment &fragment,Graph& dgraph,int d_Q);
+    void update_fragment_inc(Fragment &fragment,Graph& dgraph,
+                                             std::unordered_set<VertexID> &affected_nodes,
+                                             std::set<std::pair<VertexID,VertexID>> &add_edges,
+                                             std::set<std::pair<VertexID,VertexID>> &rm_edges,
+                                             int d_Q);
 
     void update_fragment_parallel(Fragment &fragment,Graph& dgraph,int d_Q);
 
@@ -93,6 +97,7 @@ template<class T>
                                   std::unordered_map<VertexID, std::vector<int>> &sim_counter_pre,
                                   std::unordered_map<VertexID, std::vector<int>> &sim_counter_post,
                                   std::unordered_map<VertexID, std::unordered_set<VertexID>> &S_w);
+
     void update_counter(Ball_View &ball,Graph &qgraph,VertexID u,VertexID v,
                           std::unordered_map<VertexID, std::vector<int>> &sim_counter_pre,
                           std::unordered_map<VertexID, std::vector<int>> &sim_counter_post);
@@ -106,9 +111,22 @@ template<class T>
     void extract_max_pg(Ball_View &ball_view,Graph &dgraph,Graph &qgraph,VertexID w,
                                 std::unordered_map<VertexID, std::unordered_set<VertexID>> &S_w);
 
+    void out_global_result(Fragment &fragment,  Graph &qgraph, std::unordered_map<VertexID, std::unordered_set<VertexID>> &sim);
+
     void print_ball_info(Graph &qgraph,std::unordered_map<VertexID, std::unordered_set<VertexID>> &S_w,VertexID w);
 
+    void  recalculate_incrementl_dual(Graph &dgraph, Graph &qgraph,
+                                      std::unordered_map<VertexID,std::unordered_set<VertexID>> &dsim,
+                                      std::set<std::pair<VertexID,VertexID>> &add_edges,
+                                      std::set<std::pair<VertexID,VertexID>> &rm_edges);
+
     std::vector<StrongR>  strong_parallel(Fragment &fragment,Graph &dgraph, Graph &qgraph);
+
+    std::vector<StrongR>  strong_parallel_inc(Fragment &fragment,Graph &dgraph, Graph &qgraph,
+                                                      std::unordered_map<VertexID,std::unordered_set<VertexID>> &global_dsim,
+                                                      std::vector<StrongR> &global_strong_r,
+                                                      std::set<std::pair<VertexID,VertexID>> &add_edges,
+                                                      std::set<std::pair<VertexID,VertexID>> &rm_edges);
 private:
      MessageBuffer<Vertex> Vertex_MessageBuffers;
      MessageBuffer<Edge> Edge_MessageBuffers;

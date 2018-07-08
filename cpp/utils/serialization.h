@@ -7,11 +7,12 @@
 #include <map>
 #include <unordered_set>
 #include <unordered_map>
+#include "cpp/core/config.h"
 #include "cpp/core/global.h"
 #include "PairMessage.hpp"
 #include "cpp/core/vertex.h"
 #include "cpp/core/edge.h"
-
+#include "cpp/core/strongr.h"
 class ibinstream {
 private:
 	std::vector<char> buf;
@@ -184,11 +185,13 @@ obinstream& operator>>(obinstream& m, T*& p) {
 }
 
 
+/*
 template<class T>
 obinstream& operator>>(obinstream& m, T& p) {
 	p=*(T*) m.raw_bytes(sizeof(T));
 	return m;
 }
+*/
 
 
 
@@ -278,6 +281,10 @@ ibinstream &operator <<(ibinstream &m, const Edge &e);
 //template<class ED>
 obinstream &operator >>(obinstream &m, Edge &e);
 
+//serialization of strongresult
+ibinstream &operator <<(ibinstream &m, const StrongR &strongr);
+
+obinstream &operator >>(obinstream &m,  StrongR &strongr);
 //serialization of PairMessage
 template<class T>
 ibinstream &operator <<(ibinstream &m, const PairMessage<T> &message);

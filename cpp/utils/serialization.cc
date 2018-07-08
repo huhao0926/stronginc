@@ -364,6 +364,24 @@ obinstream &operator >>(obinstream &m, Edge &e) {
 	return m;
 }
 
+ibinstream &operator <<(ibinstream &m, const StrongR &strongr) {
+    m << strongr.center_id_;
+	m << strongr.sim_;
+    return m;
+}
+
+obinstream &operator >>(obinstream &m,  StrongR &strongr) {
+	m >> strongr.center_id_;
+	m >> strongr.sim_;
+//	size_t size;
+//	m >> size;
+//	for (int i = 0; i < size; i++) {
+//		VertexID key;
+//		m >> key;
+//		m >> strongr.sim_[key];
+//	}
+	return m;
+}
 // serialization of PairMessage
 //template<class T>
 //ibinstream &operator <<(ibinstream &m, const PairMessage<T> &message) {

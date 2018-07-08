@@ -18,6 +18,8 @@
 #include "cpp/parallel/bfs_singlekhop.h"
 #include "cpp/parallel/bfs_multikhop.h"
 #include "cpp/parallel/bfs_connectivity.h"
+#include "cpp/parallel/strongparallel_incremental.h"
+#include "cpp/serial/strongsimulation.h"
 #include<iostream>
 #include <fstream>
 #include<ctime>
@@ -62,7 +64,7 @@ void test_dual_parallel(int fid){
   int index = 1;
   DualSim dualsim;
   while (index <200){
-       Graph qgraph;
+      Graph qgraph;
       qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
       std::unordered_map<VertexID, std::unordered_set<VertexID>> sim,psim;
       Dual_Parallel dualparallel;
@@ -382,6 +384,67 @@ void test_bfs_connectivity(int fid){
     ++index;
   }
 }
+
+bool strong_is_the_same(Graph &qgraph, std::vector<StrongR> &direct_result,std::vector<StrongR> &parallel_result){
+    if(direct_result.size()!=parallel_result.size()){
+        cout<<"size not the same"<<endl;
+        return false;
+    }
+    for(int i =0;i<direct_result.size();++i){
+        for(int j=0;j<parallel_result.size();++j){
+            if(direct_result[i].center() == parallel_result[j].center()){
+                std::unordered_map<VertexID, std::unordered_set<VertexID>> dirctsim=direct_result[i].ballr();
+                std::unordered_map<VertexID, std::unordered_set<VertexID>> incsim=parallel_result[j].ballr();
+                if(!dual_the_same(qgraph,dirctsim,incsim)){
+                    cout<<direct_result[i].center()<<' '<<parallel_result[j].center()<<endl;
+                    cout<<"ball result not same"<<endl;
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+void test_strong_parallel(int fid){
+  Graph dgraph,fragmentgraph,qgraph;
+  FragmentLoader fragmentloader;
+  GraphLoader dgraph_loader,qgraph_loader;
+  dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
+  Fragment fragment(fragmentgraph,graph_vfile,graph_efile,r_file);
+  int index = 1;
+  while(index <200){
+      Graph qgraph;
+      qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
+      StrongparallelInc strongparallelinc;
+      std::vector<StrongR> partial_result = strongparallelinc.strong_parallel(fragment,fragmentgraph,qgraph);
+
+      if (fid==0){
+          std::vector<std::vector<StrongR>>  tmp_vec(get_num_workers());
+          tmp_vec[fid] = partial_result;;
+          masterGather(tmp_vec);
+          std::vector<StrongR>  global_result;
+          for(int i=0;i<get_num_workers();i++){
+              for(auto ball:tmp_vec[i]){
+                  global_result.push_back(ball);
+              }
+          }
+          StrongSim strongsim;
+          std::vector<StrongR> direct_result = strongsim.strong_simulation_sim(dgraph,qgraph);
+          worker_barrier();
+          std::cout<<"index: "<<index<<' '<<global_result.size()<<' '<<direct_result.size()<<' '<<strong_is_the_same(qgraph,direct_result,global_result)<<std::endl;
+      }else{
+         slaveGather(partial_result);
+         worker_barrier();
+      }
+      index++;
+  }
+}
+
+void test_strong_inc(int fid){
+
+
+}
 private:
     std::string graph_vfile ="../data/synmtic.v";
     std::string graph_efile ="../data/synmtic.e";
@@ -407,7 +470,9 @@ int main(int argc, char *argv[]) {
 //  parallel.test_bfs_khop(rank);
 //  parallel.test_multikhop(rank);
 //  parallel.test_fragment_loader(rank);
-  parallel.test_bfs_connectivity(rank);
+//  parallel.test_bfs_connectivity(rank);
+//  parallel.test_strong_parallel(rank);
+  parallel.test_strong_parallel(rank);
   worker_finalize();
   return 0;
 }
