@@ -2,17 +2,17 @@
 #include <glog/logging.h>
 #include<boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string.hpp>
-#include "cpp/graphapi.h"
-#include "cpp/dualsimulation.h"
-#include "cpp/dual_incremental.h"
-#include "cpp/strongsimulation.h"
-#include "cpp/strong_incremental.h"
-#include "cpp/util.h"
+#include "cpp/core/graphapi.h"
+#include "cpp/serial/dualsimulation.h"
+#include "cpp/serial/dual_incremental.h"
+#include "cpp/serial/strongsimulation.h"
+#include "cpp/serial/strong_incremental.h"
+#include "cpp/utils/util.h"
 #include "cpp/io/io_local.h"
-#include "cpp/global.h"
-#include "cpp/strongr.h"
-#include "cpp/strongparallel_incremental.h"
-#include "cpp/bfs_multikhop.h"
+#include "cpp/core/global.h"
+#include "cpp/core/strongr.h"
+#include "cpp/parallel/strongparallel_incremental.h"
+#include "cpp/parallel/bfs_multikhop.h"
 #include<iostream>
 #include <fstream>
 #include<ctime>

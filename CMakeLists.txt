@@ -41,7 +41,11 @@ find_package(Threads REQUIRED)
 # -----------------------------------------------------------------------------
 # generete libgraphapi
 # -----------------------------------------------------------------------------
-file(GLOB CORE_SRC_FILES "cpp/*.cc")
+file(GLOB CORE_SRC_FILES
+      "cpp/core/*.cc"
+	  "cpp/parallel/*.cc"
+	  "cpp/serial/*.cc"
+	  "cpp/utils/*.cc")
 add_library(graph_api ${CORE_SRC_FILES})
 target_link_libraries(graph_api ${MPI_CXX_LIBRARIES} ${Boost_LIBRARIES} ${CMAKE_THREAD_LIBS_INTI}
                       ${GLOG_LIBRARIES} ${GFLAGS_LIBRARIES})

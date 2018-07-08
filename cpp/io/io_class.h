@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "cpp/global.h"
+#include "cpp/core/global.h"
 /**
  * an abstract io class, handling io for many locations
  */
