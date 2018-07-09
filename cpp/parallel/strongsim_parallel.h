@@ -8,7 +8,7 @@
 #include "dualsimulation_parallel.h"
 #include "bfs_singlekhop.h"
 #include "bfs_connectivity.h"
-#include "cpp/serial/dual_incfilter.h"
+#include "dual_incfilter.h"
 class Strong_Parallel{
 public:
      Strong_Parallel();
