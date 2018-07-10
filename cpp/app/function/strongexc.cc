@@ -147,6 +147,38 @@ public:
 
   }
 
+  void print_dual_and_strong_information(){
+      Graph dgraph;
+      Generate generate;
+      GraphLoader dgraph_loader,query_loader;
+      dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
+      std::cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<std::endl;
+      std::fstream info_file("../data/dbpedia/query5/query_info.txt",std::ios::out);
+      if(!info_file)
+	   {
+	    	std::cout<<"the outfile can  not construct";
+	    	exit(0);
+	   }
+      int i=1;
+      while(i<=200){
+          Graph qgraph;
+          query_loader.LoadGraph(qgraph,get_query_vfile(i),get_query_efile(i));
+          int d_Q = cal_diameter_qgraph(qgraph);
+          clock_t s0,e0,s1,e1;
+          s0 =clock();
+          std::unordered_set<VertexID> max_dual_set = generate.get_dual_node_result(dgraph,qgraph);
+          e0 =clock();
+          StrongSim strongsim;
+          s1=clock();
+          std::vector<StrongR> result = strongsim.strong_simulation_sim(dgraph,qgraph);
+          e1=clock();
+          std::cout<<i<<' '<<max_dual_set.size()<<' '<<d_Q<<' '<<(float)(e0-s0)/CLOCKS_PER_SEC<<' '<<(float)(e1-s1)/CLOCKS_PER_SEC<<std::endl;
+          info_file<<i<<' '<<max_dual_set.size()<<' '<<d_Q<<' '<<(float)(e0-s0)/CLOCKS_PER_SEC<<' '<<(float)(e1-s1)/CLOCKS_PER_SEC<<std::endl;
+          i++;
+      }
+         info_file.close();
+  }
+
   std::unordered_set<VertexID> find_affected_area(Graph &dgraph,std::set<std::pair<VertexID,VertexID>> &add_edges,int d_Q){
      std::unordered_set<VertexID> affected_nodes,changenode;
      for(auto e:add_edges){
@@ -288,6 +320,7 @@ public:
      }
      save_edges(add_e_set,base_add_file+std::to_string(i));
      remove_e_set = generate_random_remove_edge(max_dual_set,affectted_center_node,exist_edges,edge_num);
+     std::cout<<base_remove_file+std::to_string(i)<<' '<<remove_e_set.size()<<endl;
      save_edges(remove_e_set,base_remove_file+std::to_string(i));
      std::cout<<i<<' '<<add_e_set.size()<<' '<<remove_e_set.size()<<std::endl;
      add_e_set.clear();
@@ -411,9 +444,10 @@ int main(int argc, char *argv[]) {
 //  strongexr.generate_affected_center(200,0.06,"../data/affected_center.txt");
 //  strongexr.generate_outside_center(50000,30);
   StrongExr strongexr("dbpedia",3);
+  strongexr.print_dual_and_strong_information();
 //  strongexr.generate_query();
 //  strongexr.generate_affected_center(200,0.04,"../data/dbpedia/affected_center.txt");
-  strongexr.generate_outside_center(50000,30);
+//  strongexr.generate_outside_center(50000,30);
 //  strongexr.test_strongsimulation_inc("../data/dbpedia/affected_center.txt",30);
   worker_finalize();
   return 0;
