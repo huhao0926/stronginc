@@ -82,7 +82,7 @@
                 }
             }
         }
-    }
+   }
 
   void DualInc::propagate_remove(GraphView &graph_view,Graph &qgraph,
                           std::unordered_map<VertexID, std::unordered_set<VertexID>> &aff_node,

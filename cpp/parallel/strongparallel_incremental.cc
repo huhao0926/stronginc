@@ -142,7 +142,8 @@ void StrongparallelInc::update_fragment_inc(Fragment &fragment,Graph& dgraph,
              }
          }
          Edge_MessageBuffers.reset_in_messages();
-         fragment.update_fragment(dgraph,new_add_edges,new_rm_edges,new_add_nodes);
+         fragment.update_fragment_add_edges(dgraph,new_add_edges,new_add_nodes,false);
+         fragment.update_fragment_remove_edges(dgraph,new_rm_edges,false);
          worker_barrier();
     }
 
@@ -184,7 +185,8 @@ void StrongparallelInc::update_fragment_parallel(Fragment &fragment,Graph& dgrap
         new_add_edges.insert(item);
     }
     Edge_MessageBuffers.reset_in_messages();
-    fragment.update_fragment(dgraph,new_add_edges,new_rm_edges,new_add_nodes);
+    fragment.update_fragment_add_edges(dgraph,new_add_edges,new_add_nodes,false);
+    fragment.update_fragment_remove_edges(dgraph,new_rm_edges,false);
     worker_barrier();
 }
 

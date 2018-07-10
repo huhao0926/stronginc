@@ -51,10 +51,67 @@ public :
 
 	const bool has_vertex(const VertexID gvid) const;
 
-	void update_fragment(Graph &graph,std::vector<Edge> &add_edges, std::vector<Edge> &rm_edges, std::vector<Vertex> &vertices);
+	void add_global_info(const VertexID gvid, const VertexID localid);
 
-	void update_fragment(Graph &graph,std::unordered_set<Edge> &add_edges, std::unordered_set<Edge> &rm_edges, std::unordered_set<Vertex> &vertices);
+	void add_local_info(const VertexID localid, const VertexID gvid);
 
+	void add_outerVertices(const VertexID gvid);
+
+    template<class T1,class T2>
+    void update_fragment_add_edges(Graph &graph,T1 &add_edges,T2 &vertices,bool communication_next=true){
+        int tmp_num_vertices = graph.GetNumVertices();
+        for(auto vertex : vertices){
+            VertexID gvid = vertex.id();
+            if(global2local.find(gvid) == global2local.end()){
+                graph.AddVertex(vertex);
+                local2global[tmp_num_vertices] = gvid;
+                global2local[gvid] = tmp_num_vertices;
+                outerVertices.insert(gvid);
+                tmp_num_vertices++;
+            }
+        }
+        for(auto edge :add_edges){
+            VertexID src = edge.src();
+            VertexID dst = edge.dst();
+            if(global2local.find(src)!=global2local.end() && global2local.find(dst) != global2local.end()){
+                graph.AddEdge(Edge(global2local[src], global2local[dst], edge.attr()));
+                if(communication_next){
+                    if(fragTable.at(src) != FID && fragTable.at(dst) ==FID){
+                        msgThroughDest[dst].set(fragTable.at(src));
+                    }else if(fragTable.at(src) == FID && fragTable.at(dst) != FID){
+                        msgThroughDest[src].set(fragTable.at(dst));
+                    }
+                }
+            }
+        }
+       graph.RebuildGraphProperties();
+    }
+
+    template<class T1>
+    void update_fragment_remove_edges(Graph &graph,T1 &rm_edges,bool communication_next=true){
+        for(auto edge: rm_edges){
+            VertexID src = edge.src();
+            VertexID dst = edge.dst();
+            if(global2local.find(src)!=global2local.end() && global2local.find(dst) != global2local.end()){
+                graph.RemoveEdge(Edge(global2local[edge.src()], global2local[edge.dst()], edge.attr()));
+            }
+        }
+        if(communication_next){
+            msgThroughDest.clear();
+            for(auto v:innerVertices){
+                VertexID local_id = getLocalID(v);
+                for(auto u_pre : graph.GetParentsID(local_id)){
+                    VertexID global_id = getGlobalID(u_pre);
+                    msgThroughDest[v].set(fragTable.at(global_id));
+                }
+                for(auto u_des :graph.GetChildrenID(local_id)){
+                    VertexID global_id = getGlobalID(u_des);
+                    msgThroughDest[v].set(fragTable.at(global_id));
+                }
+            }
+        }
+        graph.RebuildGraphProperties();
+    }
 private :
        int numVertices;
        int numEdges;
