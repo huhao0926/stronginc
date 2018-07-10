@@ -134,6 +134,10 @@ public:
       while(i<=200){
           Graph qgraph;
           generate.generate_connect_graphs_by_Dgraph(dgraph,qgraph,5);
+          int d_Q=cal_diameter_qgraph(qgraph);
+          if(d_Q>2){
+              continue;
+          }
           clock_t s0,e0;
           s0 =clock();
           std::unordered_set<VertexID> max_dual_set = generate.get_dual_node_result(dgraph,qgraph);
