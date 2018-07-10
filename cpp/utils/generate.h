@@ -3,6 +3,8 @@
 #include<ctime>
 #include<unordered_set>
 #include<unordered_map>
+#include<iostream>
+#include <fstream>
 #include "cpp/core/graphapi.h"
 #include "cpp/core/global.h"
 #include "cpp/core/strongr.h"
@@ -28,6 +30,8 @@ public:
     void generate_random_dgraph(Graph &graph,int num_nodes=2000,double a = 1.20,int l = 200);
 
     void generate_connect_graphs_by_Dgraph(Graph &dgraph, Graph &qgraph,const  int num_nodes);
+
+    void save_grape_file(Graph &qgraph, const std::string &v_file, const std::string &e_file);
 
     std::unordered_set<VertexID> get_dual_node_result(Graph &dgraph,Graph &qgraph);
 

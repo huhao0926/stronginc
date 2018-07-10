@@ -94,6 +94,29 @@ void Generate::generate_connect_graphs_by_Dgraph(Graph &dgraph, Graph &qgraph,co
     return ;
 }
 
+void Generate::save_grape_file(Graph &qgraph, const std::string &v_file, const std::string &e_file){
+   std::fstream out_vfile(v_file,std::ios::out);
+   if(!out_vfile)
+	{
+		std::cout<<"the outfile can  not construct";
+		exit(0);
+	}
+	for(auto u:qgraph.GetAllVerticesID()){
+	 out_vfile<<u<<' '<<qgraph.GetVertexLabel(u)<<std::endl;
+	}
+	out_vfile.close();
+
+   std::fstream out_efile(e_file,std::ios::out);
+   if(!out_efile)
+	{
+		std::cout<<"the outfile can  not construct";
+		exit(0);
+	}
+	for(auto edge:qgraph.GetAllEdges()){
+	    out_efile<<edge.src()<<' '<<edge.dst()<<' '<<'1'<<std::endl;
+	}
+	out_efile.close();
+}
 std::unordered_set<VertexID> Generate::get_dual_node_result(Graph &dgraph,Graph &qgraph){
         std::unordered_map<VertexID, std::unordered_set<VertexID>> sim;
         DualSim dualsim;

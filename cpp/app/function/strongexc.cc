@@ -21,6 +21,19 @@
 
 class StrongExr{
 public:
+
+    StrongExr(){}
+
+    StrongExr(std::string test_data_name,int query_index){
+        this->test_data_name=test_data_name;
+        this->graph_vfile ="../data/"+test_data_name+"/"+test_data_name+".v";
+        this->graph_efile ="../data/"+test_data_name+"/"+test_data_name+".e";
+        this->r_file = "../data/"+test_data_name+"/"+test_data_name+".r";
+        this->base_qfile = "../data/"+test_data_name+"/query5/q";
+        this->base_add_file = "../data/"+test_data_name+"/inc/add_e";
+        this->base_remove_file="../data/"+test_data_name+"/inc/rm_e";
+        this->query_index = query_index;
+    }
     std::string get_query_vfile(int index){
         return base_qfile+std::to_string(index)+".v";
     }
@@ -111,7 +124,27 @@ public:
     dgraph_loader.LoadGraph(dgraph,vertices,graph_edges);
  }
 
+  void generate_query(){
+      Graph dgraph;
+      Generate generate;
+      GraphLoader dgraph_loader;
+      dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
+      std::cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<std::endl;
+      int i=1;
+      while(i<=200){
+          Graph qgraph;
+          generate.generate_connect_graphs_by_Dgraph(dgraph,qgraph,5);
+          clock_t s0,e0;
+          s0 =clock();
+          std::unordered_set<VertexID> max_dual_set = generate.get_dual_node_result(dgraph,qgraph);
+          e0 =clock();
+          if(max_dual_set.size()<=1300){
+              generate.save_grape_file(qgraph,get_query_vfile(i),get_query_efile(i));
+              std::cout<<i<<' '<<"calculate dual time"<<(float)(e0-s0)/CLOCKS_PER_SEC<<"s"<<' '<<max_dual_set.size()<<std::endl;
+          }
+      }
 
+  }
   std::unordered_set<VertexID> find_affected_area(Graph &dgraph,std::set<std::pair<VertexID,VertexID>> &add_edges,int d_Q){
      std::unordered_set<VertexID> affected_nodes,changenode;
      for(auto e:add_edges){
@@ -308,7 +341,6 @@ public:
       LoadEdges(affected_center_edges,affecte_center_file);
       std::fstream outfile("runtime.txt",std::ios::out);
       outfile.close();
-//      int circle_num = 30;
       while (j<=circle_num){
           GraphLoader dgraph_loaddir,dgraph_loadinc;
           Graph dgraphdir,dgraphinc;
@@ -349,17 +381,15 @@ public:
          outfile.close();
           j+=1;
       }
-
-
-
  }
 private:
-    std::string graph_vfile ="../data/synmtic.v";
-    std::string graph_efile ="../data/synmtic.e";
-    std::string r_file = "../data/synmtic.r";
-    std::string base_qfile = "../data/synmticquery/q";
-    std::string base_add_file = "../data/incsynmtic/add_e";
-    std::string base_remove_file="../data/incsynmtic/rm_e";
+    std::string test_data_name ="yago";
+    std::string graph_vfile ="../data/yago/yago.v";
+    std::string graph_efile ="../data/yago/yago.e";
+    std::string r_file = "../data/yago/yago.r";
+    std::string base_qfile = "../data/yago/query5/q";
+    std::string base_add_file = "../data/yago/inc/add_e";
+    std::string base_remove_file="../data/yago/inc/rm_e";
     int query_index = 1;
 
 };
@@ -372,11 +402,12 @@ int main(int argc, char *argv[]) {
   google::InitGoogleLogging("test for working");
   google::ShutdownGoogleLogging();
   init_workers();
-  int query_index = 1;
-  StrongExr strongexr;
-  strongexr.generate_affected_center(200,0.05,"../data/affected_center.txt");
-//  strongexr.generate_outside_center(query_index);
-
+//  int query_index = 1;
+//  StrongExr strongexr;
+//  strongexr.generate_affected_center(200,0.05,"../data/affected_center.txt");
+//  strongexr.generate_outside_center(50000,30);
+  StrongExr strongexr("dbpedia",1);
+  strongexr.generate_query();
   worker_finalize();
   return 0;
 }
