@@ -41,9 +41,9 @@ public:
 
     std::pair<VertexID,VertexID> generate_one_remove_edge_by_list(std::vector<std::pair<VertexID,VertexID>> &edge_list, std::set<std::pair<VertexID,VertexID>> &already_rm_edges,std::set<std::pair<VertexID,VertexID>> &remove_edges);
 
-    std::set<std::pair<VertexID,VertexID>> generate_bunch_edges_random(int node_num, std::set<std::pair<VertexID,VertexID>> &exist_edges,int num_edges);
+    std::set<std::pair<VertexID,VertexID>> generate_bunch_add_edges_random(int node_num, std::set<std::pair<VertexID,VertexID>> &exist_edges,int num_edges);
 
-    std::set<std::pair<VertexID,VertexID>> generate_bunch_edges_by_nodelist(std::vector<VertexID> &node_list,std::set<std::pair<VertexID,VertexID>> &exist_edges,int num_edges);
+    std::set<std::pair<VertexID,VertexID>> generate_bunch_add_edges_by_nodelist(std::vector<VertexID> &node_list,std::set<std::pair<VertexID,VertexID>> &exist_edges,int num_edges);
 
     std::set<std::pair<VertexID,VertexID>> generate_bunch_remove_edge_by_list(std::vector<std::pair<VertexID,VertexID>> &edge_list, std::set<std::pair<VertexID,VertexID>> &already_rm_edges,int num_edges);
 

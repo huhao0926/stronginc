@@ -166,7 +166,7 @@ std::pair<VertexID,VertexID>  Generate::generate_one_add_edge_by_nodelist(std::v
       }
  }
 
-std::set<std::pair<VertexID,VertexID>> Generate::generate_bunch_edges_random(int node_num, std::set<std::pair<VertexID,VertexID>> &exist_edges,int num_edges){
+std::set<std::pair<VertexID,VertexID>> Generate::generate_bunch_add_edges_random(int node_num, std::set<std::pair<VertexID,VertexID>> &exist_edges,int num_edges){
      std::set<std::pair<VertexID,VertexID>> add_e_set;
      int j =0;
      while(j<num_edges){
@@ -177,7 +177,7 @@ std::set<std::pair<VertexID,VertexID>> Generate::generate_bunch_edges_random(int
      return add_e_set;
 }
 
-std::set<std::pair<VertexID,VertexID>> Generate::generate_bunch_edges_by_nodelist(std::vector<VertexID> &node_list,std::set<std::pair<VertexID,VertexID>> &exist_edges,int num_edges){
+std::set<std::pair<VertexID,VertexID>> Generate::generate_bunch_add_edges_by_nodelist(std::vector<VertexID> &node_list,std::set<std::pair<VertexID,VertexID>> &exist_edges,int num_edges){
      std::set<std::pair<VertexID,VertexID>> add_e_set;
      int j =0;
      while(j<num_edges){
@@ -196,6 +196,7 @@ std::set<std::pair<VertexID,VertexID>> Generate::generate_bunch_remove_edge_by_l
         remove_e_set.insert(e);
         j++;
     }
+    return remove_e_set;
 }
 
 std::pair<VertexID,VertexID> Generate::generate_one_remove_edge_by_set(std::set<std::pair<VertexID,VertexID>> &edge_set, std::set<std::pair<VertexID,VertexID>> &already_rm_edges,std::set<std::pair<VertexID,VertexID>> &remove_edges){

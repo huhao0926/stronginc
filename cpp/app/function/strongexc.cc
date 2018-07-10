@@ -138,7 +138,7 @@ public:
           s0 =clock();
           std::unordered_set<VertexID> max_dual_set = generate.get_dual_node_result(dgraph,qgraph);
           e0 =clock();
-          if(max_dual_set.size()<=1300){
+          if(max_dual_set.size()<=2000){
               generate.save_grape_file(qgraph,get_query_vfile(i),get_query_efile(i));
               std::cout<<i<<' '<<"calculate dual time"<<(float)(e0-s0)/CLOCKS_PER_SEC<<"s"<<' '<<max_dual_set.size()<<std::endl;
               i++;
@@ -146,6 +146,7 @@ public:
       }
 
   }
+
   std::unordered_set<VertexID> find_affected_area(Graph &dgraph,std::set<std::pair<VertexID,VertexID>> &add_edges,int d_Q){
      std::unordered_set<VertexID> affected_nodes,changenode;
      for(auto e:add_edges){
@@ -234,7 +235,7 @@ public:
      }
   }
 
-  void generate_random_remove_edge(std::unordered_set<VertexID> &max_dual_set, std::unordered_set<VertexID> &affectted_center_node,std::set<std::pair<VertexID,VertexID>> &exist_edges, int num_edges, std::set<std::pair<VertexID,VertexID>> &remove_e_set){
+  std::set<std::pair<VertexID,VertexID>> generate_random_remove_edge(std::unordered_set<VertexID> &max_dual_set, std::unordered_set<VertexID> &affectted_center_node,std::set<std::pair<VertexID,VertexID>> &exist_edges, int num_edges){
       std::vector<std::pair<VertexID,VertexID>> center_edges,outside_center_edges;
       for(auto e :exist_edges){
            if(affectted_center_node.find(e.first)!=affectted_center_node.end() && affectted_center_node.find(e.second) != affectted_center_node.end()){
@@ -247,7 +248,8 @@ public:
            }
       }
       Generate generate;
-      remove_e_set = generate.generate_bunch_remove_edge_by_list(center_edges,exist_edges,num_edges);
+      std::set<std::pair<VertexID,VertexID>> already_remove_edges;
+      return generate.generate_bunch_remove_edge_by_list(outside_center_edges,already_remove_edges,num_edges);
   }
 
   void generate_outside_center(int edge_num,int circle_num){
@@ -275,20 +277,21 @@ public:
 //  std::set<pair<VertexID,VertexID>> exist_edges;
 
   int i=1;
-  while(i<=circle_num){
+  while(i<circle_num){
      std::set<pair<VertexID,VertexID>> exist_edges;
      Graph dgraph;
      load_graph(dgraph,graph_vfile,graph_efile, base_add_file,base_remove_file,exist_edges,i-1);
      std::set<std::pair<VertexID,VertexID>> add_e_set,remove_e_set;
-     add_e_set = generate.generate_bunch_edges_by_nodelist(outside_center_nodes_list,exist_edges,edge_num);
-     generate_random_remove_edge(max_dual_set,affectted_center_node,exist_edges,edge_num,remove_e_set);
-
+     add_e_set = generate.generate_bunch_add_edges_by_nodelist(outside_center_nodes_list,exist_edges,edge_num);
      for(auto e :add_e_set){
          exist_edges.insert(e);
      }
+     save_edges(add_e_set,base_add_file+std::to_string(i));
+     remove_e_set = generate_random_remove_edge(max_dual_set,affectted_center_node,exist_edges,edge_num);
+     save_edges(remove_e_set,base_remove_file+std::to_string(i));
+     std::cout<<i<<' '<<add_e_set.size()<<' '<<remove_e_set.size()<<std::endl;
      add_e_set.clear();
      remove_e_set.clear();
-     std::cout<<i<<std::endl;
   i++;
   }
 }
@@ -404,11 +407,14 @@ int main(int argc, char *argv[]) {
   google::ShutdownGoogleLogging();
   init_workers();
 //  int query_index = 1;
-//  StrongExr strongexr;
-//  strongexr.generate_affected_center(200,0.05,"../data/affected_center.txt");
+//  StrongExr strongexr("yago",1);
+//  strongexr.generate_affected_center(200,0.06,"../data/affected_center.txt");
 //  strongexr.generate_outside_center(50000,30);
-  StrongExr strongexr("dbpedia",1);
-  strongexr.generate_query();
+  StrongExr strongexr("dbpedia",3);
+//  strongexr.generate_query();
+//  strongexr.generate_affected_center(200,0.04,"../data/dbpedia/affected_center.txt");
+  strongexr.generate_outside_center(50000,30);
+//  strongexr.test_strongsimulation_inc("../data/dbpedia/affected_center.txt",30);
   worker_finalize();
   return 0;
 }
