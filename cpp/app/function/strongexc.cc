@@ -141,6 +141,7 @@ public:
           if(max_dual_set.size()<=1300){
               generate.save_grape_file(qgraph,get_query_vfile(i),get_query_efile(i));
               std::cout<<i<<' '<<"calculate dual time"<<(float)(e0-s0)/CLOCKS_PER_SEC<<"s"<<' '<<max_dual_set.size()<<std::endl;
+              i++;
           }
       }
 
