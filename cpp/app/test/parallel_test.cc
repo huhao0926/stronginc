@@ -2,7 +2,7 @@
 #include <glog/logging.h>
 #include<boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string.hpp>
-//#include "cpp/core/graphapi.h"
+#include "cpp/core/graphapi.h"
 #include "cpp/serial/dualsimulation.h"
 #include "cpp/serial/dual_incremental.h"
 #include "cpp/parallel/dualsimulation_parallel.h"
@@ -20,6 +20,7 @@
 #include "cpp/parallel/bfs_connectivity.h"
 #include "cpp/parallel/strongparallel_incremental.h"
 #include "cpp/serial/strongsimulation.h"
+#include "cpp/parallel/dual_parallel_inc.h"
 #include<iostream>
 #include <fstream>
 #include<ctime>
@@ -441,10 +442,82 @@ void test_strong_parallel(int fid){
   }
 }
 
-void test_strong_inc(int fid){
+void test_strong_parallel_inc(int fid){
 
 
 }
+
+
+void test_dual_parallelinc(int fid){
+  int index = 1;
+  DualSim dualsim;
+  while (index <20){
+      Graph dgraph,fragmentgraph,qgraph;
+      FragmentLoader fragmentloader;
+        /* note off dualsimulation_parallel.cc  276
+       */
+      GraphLoader dgraph_loader,qgraph_loader;
+      dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
+      Fragment fragment(fragmentgraph,graph_vfile,graph_efile,r_file);
+      qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
+      std::unordered_map<VertexID, std::unordered_set<VertexID>> sim,psim;
+      Dual_Parallel dualparallel;
+      dualparallel.dual_paraller(fragment,fragmentgraph,qgraph,psim);
+      int j=1;
+       while (j<=10){
+            Graph inc_graph,inc_fragmentgraph;
+            dgraph_loader.LoadGraph(inc_graph,graph_vfile,graph_efile);
+            Fragment fragment1(inc_fragmentgraph,graph_vfile,graph_efile,r_file);
+            std::set<std::pair<VertexID,VertexID>> add_edges,rm_edges;
+            Load_bunch_edges(add_edges,base_add_file,j);
+//            Load_bunch_edges(rm_edges,base_remove_file,j);
+            std::unordered_map<VertexID, std::unordered_set<VertexID>> inc_serial,inc_parallel;
+            for(auto u :qgraph.GetAllVerticesID()){
+                inc_parallel[u] = std::unordered_set<VertexID>();
+                for(auto v : psim[u]){
+                    inc_parallel[u].insert(v);
+                }
+            }
+            for (auto e:add_edges){
+               inc_graph.AddEdge(Edge(e.first,e.second,1));
+            }
+
+            Dual_parallelInc dual_parallel_inc;
+            dual_parallel_inc.update_by_add_edges(fragment1,inc_fragmentgraph,add_edges,true);
+            dual_parallel_inc.incremental_add_edges(fragment1, inc_fragmentgraph, qgraph,inc_parallel,add_edges);
+            if (fid==0){
+                std::vector<std::unordered_map<VertexID, std::unordered_set<VertexID>>>  tmp_vec(get_num_workers());
+                tmp_vec[fid] = inc_parallel;
+                masterGather(tmp_vec);
+                std::unordered_map<VertexID, std::unordered_set<VertexID>>  globalsim;
+                for(auto u :qgraph.GetAllVerticesID()){
+                    globalsim[u] = std::unordered_set<VertexID>();
+                }
+                for(int i=0;i<get_num_workers();i++){
+                    for(auto u :qgraph.GetAllVerticesID()){
+                        for(auto v : tmp_vec[i][u])
+                         {globalsim[u].insert(v);}
+                    }
+                }
+                DualSim dualsim;
+                bool initialized_sim = false;
+                sim.clear();
+                dualsim.dual_simulation(inc_graph,qgraph,sim,initialized_sim);
+                worker_barrier();
+                std::cout<<index<<' '<<j<<' '<<dual_the_same(qgraph,sim,globalsim)<<std::endl;
+            }else{
+               slaveGather(inc_parallel);
+               worker_barrier();
+            }
+            j+=1;
+      }
+  index += 1;
+  }
+}
+
+
+
+
 private:
     std::string graph_vfile ="../data/synmtic.v";
     std::string graph_efile ="../data/synmtic.e";
@@ -471,8 +544,8 @@ int main(int argc, char *argv[]) {
 //  parallel.test_multikhop(rank);
 //  parallel.test_fragment_loader(rank);
 //  parallel.test_bfs_connectivity(rank);
-//  parallel.test_strong_parallel(rank);
   parallel.test_strong_parallel(rank);
+//  parallel.test_dual_parallelinc(rank);
   worker_finalize();
   return 0;
 }

@@ -59,31 +59,44 @@ public :
 
     template<class T1,class T2>
     void update_fragment_add_edges(Graph &graph,T1 &add_edges,T2 &vertices,bool communication_next=true){
-        int tmp_num_vertices = graph.GetNumVertices();
-        for(auto vertex : vertices){
-            VertexID gvid = vertex.id();
+        for(auto ver : vertices){
+            VertexID gvid = ver.id();
             if(global2local.find(gvid) == global2local.end()){
-                graph.AddVertex(vertex);
-                local2global[tmp_num_vertices] = gvid;
-                global2local[gvid] = tmp_num_vertices;
+                VertexID localid = graph.AddVertex(ver);
+                local2global[localid] = gvid;
+                global2local[gvid] = localid;
                 outerVertices.insert(gvid);
-                tmp_num_vertices++;
             }
         }
         for(auto edge :add_edges){
             VertexID src = edge.src();
             VertexID dst = edge.dst();
-            if(global2local.find(src)!=global2local.end() && global2local.find(dst) != global2local.end()){
-                graph.AddEdge(Edge(global2local[src], global2local[dst], edge.attr()));
-                if(communication_next){
-                    if(fragTable.at(src) != FID && fragTable.at(dst) ==FID){
+            if(communication_next){
+                if (fragTable.at(src) == FID || fragTable.at(dst) == FID){
+                    graph.AddEdge(Edge(global2local[src], global2local[dst], edge.attr()));
+                     if(fragTable.at(src) != FID && fragTable.at(dst) ==FID){
                         msgThroughDest[dst].set(fragTable.at(src));
                     }else if(fragTable.at(src) == FID && fragTable.at(dst) != FID){
                         msgThroughDest[src].set(fragTable.at(dst));
                     }
                 }
+            }else{
+                if(global2local.find(src)!=global2local.end() && global2local.find(dst) != global2local.end()){
+                    graph.AddEdge(Edge(global2local[src], global2local[dst], edge.attr()));
+                }
             }
         }
+//            if(global2local.find(src)!=global2local.end() && global2local.find(dst) != global2local.end()){
+//                graph.AddEdge(Edge(global2local[src], global2local[dst], edge.attr()));
+//                if(communication_next){
+//                    if(fragTable.at(src) != FID && fragTable.at(dst) ==FID){
+//                        msgThroughDest[dst].set(fragTable.at(src));
+//                    }else if(fragTable.at(src) == FID && fragTable.at(dst) != FID){
+//                        msgThroughDest[src].set(fragTable.at(dst));
+//                    }
+//                }
+//            }
+
        graph.RebuildGraphProperties();
     }
 

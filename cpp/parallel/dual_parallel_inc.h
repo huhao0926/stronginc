@@ -71,9 +71,13 @@ public:
                                            std::set<std::pair<VertexID,VertexID>> &add_edges,
                                            std::set<std::pair<VertexID,VertexID>> &rm_edges);
 
-    void update_by_add_edges(Fragment &fragment,Graph &dgraph,std::set<std::pair<VertexID,VertexID>> &add_edges,bool communication_next=true);
+    void update_by_add_edges(Fragment &fragment,Graph &dgraph,std::set<std::pair<VertexID,VertexID>> &add_edges,bool communication_next);
 
-    void update_by_remove_edges(Fragment &fragment,Graph &dgraph,std::set<std::pair<VertexID,VertexID>> &rm_edges,bool communication_next=true);
+    void update_by_remove_edges(Fragment &fragment,Graph &dgraph,std::set<std::pair<VertexID,VertexID>> &rm_edges,bool communication_next);
+
+    void out_global_result(Fragment &fragment,  Graph &qgraph, std::unordered_map<VertexID, std::unordered_set<VertexID>> &sim);
+
+    void print_global_info(Fragment &fragment, Graph &qgraph, std::unordered_map<VertexID, std::unordered_set<VertexID>> &sim);
 private:
     int continue_run = 0;
     MessageBuffer<std::pair < VertexID, int>> messageBuffers;

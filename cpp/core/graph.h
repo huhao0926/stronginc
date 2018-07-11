@@ -303,7 +303,7 @@ class Graph {
    * add a new vertex v to the graph
    * @param v the new vertex
    */
-  void AddVertex(const Vertex &v);
+  int AddVertex(const Vertex &v);
 
   /**
    * add a new edge e to the graph
