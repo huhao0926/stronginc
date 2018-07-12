@@ -387,17 +387,58 @@ void test_bfs_connectivity(int fid){
 }
 
 bool strong_is_the_same(Graph &qgraph, std::vector<StrongR> &direct_result,std::vector<StrongR> &parallel_result){
-    if(direct_result.size()!=parallel_result.size()){
-        cout<<"size not the same"<<endl;
-        return false;
-    }
+//    if(direct_result.size()!=parallel_result.size()){
+//        cout<<"size not the same"<<endl;
+//        return false;
+//    }
     for(int i =0;i<direct_result.size();++i){
         for(int j=0;j<parallel_result.size();++j){
             if(direct_result[i].center() == parallel_result[j].center()){
                 std::unordered_map<VertexID, std::unordered_set<VertexID>> dirctsim=direct_result[i].ballr();
                 std::unordered_map<VertexID, std::unordered_set<VertexID>> incsim=parallel_result[j].ballr();
                 if(!dual_the_same(qgraph,dirctsim,incsim)){
+                    for(auto u :qgraph.GetAllVerticesID()){
+                        cout<<u;
+                        for(auto v:dirctsim[u]){
+                            cout<<' '<<v;
+                        }
+                        cout<<endl;
+                    }
+                    for(auto u :qgraph.GetAllVerticesID()){
+                        cout<<u;
+                        for(auto v:incsim[u]){
+                            cout<<' '<<v;
+                        }
+                        cout<<endl;
+                    }
                     cout<<direct_result[i].center()<<' '<<parallel_result[j].center()<<endl;
+                    cout<<"ball result not same"<<endl;
+                    return false;
+                }
+            }
+        }
+    }
+    for(int i =0;i<parallel_result.size();++i){
+        for(int j=0;j<direct_result.size();++j){
+            if(parallel_result[i].center() == direct_result[j].center()){
+                std::unordered_map<VertexID, std::unordered_set<VertexID>> dirctsim=parallel_result[i].ballr();
+                std::unordered_map<VertexID, std::unordered_set<VertexID>> incsim=direct_result[j].ballr();
+                if(!dual_the_same(qgraph,dirctsim,incsim)){
+//                    for(auto u :qgraph.GetAllVerticesID()){
+//                        cout<<u;
+//                        for(auto v:dirctsim[u]){
+//                            cout<<' '<<v;
+//                        }
+//                        cout<<endl;
+//                    }
+//                    for(auto u :qgraph.GetAllVerticesID()){
+//                        cout<<u;
+//                        for(auto v:incsim[u]){
+//                            cout<<' '<<v;
+//                        }
+//                        cout<<endl;
+//                    }
+//                    cout<<direct_result[i].center()<<' '<<parallel_result[j].center()<<endl;
                     cout<<"ball result not same"<<endl;
                     return false;
                 }
@@ -430,6 +471,15 @@ void test_strong_parallel(int fid){
                   global_result.push_back(ball);
               }
           }
+          for(int i=0;i<global_result.size();++i){
+              for(int j=i+1;j<global_result.size();++j){
+                  if(global_result[j].center()<global_result[i].center()){
+                      StrongR tmp_r=global_result[j];
+                      global_result[j]=global_result[i];
+                      global_result[i] = tmp_r;
+                  }
+              }
+          }
           StrongSim strongsim;
           std::vector<StrongR> direct_result = strongsim.strong_simulation_sim(dgraph,qgraph);
           worker_barrier();
@@ -442,8 +492,90 @@ void test_strong_parallel(int fid){
   }
 }
 
-void test_strong_parallel_inc(int fid){
+std::vector<StrongR> calculate_direct_strong_inc(Graph &dgraph,Graph &qgraph,
+                                      std::set<std::pair<VertexID,VertexID>> &add_edges,
+                                      std::set<std::pair<VertexID,VertexID>> &rm_edges){
+          StrongSim strongsim;
+          for (auto e:add_edges){
+             dgraph.AddEdge(Edge(e.first,e.second,1));
+          }
+         for(auto e :rm_edges){
+              dgraph.RemoveEdge(Edge(e.first,e.second,1));
+          }
+          std::vector<StrongR> result = strongsim.strong_simulation_sim(dgraph,qgraph);
 
+          return result;
+ }
+
+void test_strong_parallel_inc(int fid){
+  Graph dgraph,fragmentgraph;
+ // FragmentLoader fragmentloader;
+  GraphLoader dgraph_loader,qgraph_loader;
+  dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
+ Fragment fragment(fragmentgraph,graph_vfile,graph_efile,r_file);
+  int index = 1;
+  while(index <20){
+      Graph qgraph;
+      qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
+//      Fragment fragment(fragmentgraph,graph_vfile,graph_efile,r_file);
+      std::unordered_map<VertexID, std::unordered_set<VertexID>> partial_sim;
+      Dual_Parallel dualparallel;
+      dualparallel.dual_paraller(fragment,fragmentgraph,qgraph,partial_sim);
+      StrongSim strongsim;
+      std::vector<StrongR> partial_strong = strongsim.strong_simulation_sim(dgraph,qgraph);
+      int j=1;
+      while(j<10){
+            Graph inc_dgraph;
+            Graph inc_fragmentgraph;
+            dgraph_loader.LoadGraph(inc_dgraph,graph_vfile,graph_efile);
+            Fragment inc_fragment(inc_fragmentgraph,graph_vfile,graph_efile,r_file);
+            std::set<std::pair<VertexID,VertexID>> add_edges,rm_edges;
+            Load_bunch_edges(add_edges,base_add_file,j);
+           // int d_Q=cal_diameter_qgraph(qgraph);
+            //std::unordered_set<VertexID> aa=find_affected_area(inc_dgraph,add_edges,rm_edges,2*d_Q);
+           // cout<<(aa.find(8762)!=aa.end())<<' '<<(aa.find(3585)!=aa.end())<<' '<<inc_dgraph.shortest_distance(3585,8762)<<endl;
+//            Load_bunch_edges(rm_edges,base_remove_file,j);
+            std::unordered_map<VertexID, std::unordered_set<VertexID>> inc_parallel_dual;
+            std::vector<StrongR> inc_parallel_strong;
+            for(auto u :qgraph.GetAllVerticesID()){
+                inc_parallel_dual[u] = std::unordered_set<VertexID>();
+                for(auto v : partial_sim[u]){
+                    inc_parallel_dual[u].insert(v);
+                }
+            }
+            for(auto ball:partial_strong){
+                inc_parallel_strong.push_back(ball);
+            }
+            StrongparallelInc strongparallelinc;
+            std::vector<StrongR> partial_result=strongparallelinc.strong_parallel_inc(inc_fragment,inc_fragmentgraph,qgraph,inc_parallel_dual,inc_parallel_strong,add_edges,rm_edges);
+      if (fid==0){
+          std::vector<std::vector<StrongR>>  tmp_vec(get_num_workers());
+          tmp_vec[fid] = partial_result;;
+          masterGather(tmp_vec);
+          std::vector<StrongR>  global_result;
+          for(int i=0;i<get_num_workers();i++){
+              for(auto ball:tmp_vec[i]){
+                  global_result.push_back(ball);
+              }
+          }
+          std::unordered_set<VertexID> global_center,inc_center;
+          std::vector<StrongR> direct_strong = calculate_direct_strong_inc(inc_dgraph,qgraph,add_edges,rm_edges);
+          for(auto ball:global_result){
+             global_center.insert(ball.center());
+          }
+          for(auto ball:direct_strong){
+              inc_center.insert(ball.center());
+          }          
+          worker_barrier();
+          std::cout<<index<<' '<<j<<' '<<global_center.size()<<' '<<inc_center.size()<<' '<<intersection(global_center,inc_center).size()<<"=="<<global_result.size()<<' '<<direct_strong.size()<<' '<<strong_is_the_same(qgraph,direct_strong,global_result)<<std::endl;
+      }else{
+         slaveGather(partial_result);
+         worker_barrier();
+      }
+            j++;
+      }
+      index++;
+  }
 
 }
 
@@ -515,9 +647,6 @@ void test_dual_parallelinc(int fid){
   }
 }
 
-
-
-
 private:
     std::string graph_vfile ="../data/synmtic.v";
     std::string graph_efile ="../data/synmtic.e";
@@ -544,8 +673,9 @@ int main(int argc, char *argv[]) {
 //  parallel.test_multikhop(rank);
 //  parallel.test_fragment_loader(rank);
 //  parallel.test_bfs_connectivity(rank);
-  parallel.test_strong_parallel(rank);
+//  parallel.test_strong_parallel(rank);
 //  parallel.test_dual_parallelinc(rank);
+  parallel.test_strong_parallel_inc(rank);
   worker_finalize();
   return 0;
 }

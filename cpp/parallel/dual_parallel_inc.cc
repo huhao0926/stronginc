@@ -212,7 +212,7 @@ void Dual_parallelInc::incremental_add_edges(Fragment &fragment, Graph &dgraph, 
                 }
             }
         }
-        out_global_result(fragment,qgraph,dsim);
+//        out_global_result(fragment,qgraph,dsim);
    }
 
 void Dual_parallelInc::incremental_remove_edgs(Fragment &fragment, Graph &dgraph,Graph &qgraph,
@@ -280,6 +280,7 @@ void Dual_parallelInc::incremental_remove_edgs(Fragment &fragment, Graph &dgraph
                dsim[u].clear();
            }
         }
+//        out_global_result(fragment,qgraph,dsim);
  }
 
 void Dual_parallelInc::propagate_remove_PEval(Fragment &fragment,GraphView &graph_view,Graph &qgraph,

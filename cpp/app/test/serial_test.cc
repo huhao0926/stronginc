@@ -28,6 +28,31 @@ public:
         return "../data/synmticquery/q"+std::to_string(index)+".e";
     }
 public:
+    void test_add_edges(){
+        int index = 1;
+        GraphLoader dgraph_loader,qgraph_loader;
+        Graph qgraph;
+        qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
+        cout<<qgraph.GetNumEdges()<<endl;
+        for(auto e:qgraph.GetAllEdges()){
+            std::cout<<e.src()<<' '<<e.dst()<<endl;
+        }
+        qgraph.AddEdge(Edge(1,2,1));
+        cout<<qgraph.GetNumEdges()<<endl;
+        for(auto e:qgraph.GetAllEdges()){
+            std::cout<<e.src()<<' '<<e.dst()<<endl;
+        }
+        qgraph.AddEdge(Edge(0,2,1));
+        cout<<qgraph.GetNumEdges()<<endl;
+        for(auto e:qgraph.GetAllEdges()){
+            std::cout<<e.src()<<' '<<e.dst()<<endl;
+        }
+        qgraph.AddEdge(Edge(0,1,1));
+        cout<<qgraph.GetNumEdges()<<endl;
+        for(auto e:qgraph.GetAllEdges()){
+            std::cout<<e.src()<<' '<<e.dst()<<endl;
+        }
+    }
 
     void test_dualsimulation(){
         Graph dgraph;
@@ -138,7 +163,8 @@ int main(int argc, char *argv[]) {
   Serial serial;
 //  serial.test_dualsimulation();
 //  serial.test_dual_incremental();
-  serial.test_strongsimulation();
+//  serial.test_strongsimulation();
+  serial.test_add_edges();
 //  worker_finalize();
   return 0;
 }

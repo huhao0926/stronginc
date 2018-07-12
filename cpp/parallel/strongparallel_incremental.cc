@@ -3,6 +3,8 @@
 StrongparallelInc::StrongparallelInc(){
     Vertex_MessageBuffers.init();
     Edge_MessageBuffers.init();
+    Id_MessageBuffers.init();
+    pair_MessageBuffers.init();
 }
 
 StrongparallelInc::~StrongparallelInc(){}
@@ -131,19 +133,19 @@ void StrongparallelInc::update_fragment_inc(Fragment &fragment,Graph& dgraph,
          for (auto item :Edge_MessageBuffers.get_messages()){
              new_add_edges.insert(item);
          }
-         for(auto e :add_edges){
-             if(rm_edges.find(e) == rm_edges.end()){
-                 new_add_edges.insert(Edge(e.first,e.second,1));
-             }
-         }
-         for(auto e:rm_edges){
-             if(add_edges.find(e)!=add_edges.end()){
-                 new_rm_edges.insert(Edge(e.first,e.second,1));
-             }
-         }
+//         for(auto e :add_edges){
+//             if(rm_edges.find(e) == rm_edges.end()){
+//                 new_add_edges.insert(Edge(e.first,e.second,1));
+//             }
+//         }
+//         for(auto e:rm_edges){
+//             if(add_edges.find(e)!=add_edges.end()){
+//                 new_rm_edges.insert(Edge(e.first,e.second,1));
+//             }
+//         }
          Edge_MessageBuffers.reset_in_messages();
          fragment.update_fragment_add_edges(dgraph,new_add_edges,new_add_nodes,false);
-         fragment.update_fragment_remove_edges(dgraph,new_rm_edges,false);
+//         fragment.update_fragment_remove_edges(dgraph,new_rm_edges,false);
          worker_barrier();
     }
 
@@ -189,6 +191,46 @@ void StrongparallelInc::update_fragment_parallel(Fragment &fragment,Graph& dgrap
     fragment.update_fragment_remove_edges(dgraph,new_rm_edges,false);
     worker_barrier();
 }
+
+std::vector<std::pair<VertexID,VertexID>> StrongparallelInc::assign_task(Fragment &fragment,Graph &qgraph,
+                                                                            std::unordered_map<VertexID, std::unordered_set<VertexID>> &sim,
+                                                                            std::unordered_set<VertexID> &affected_center,
+                                                                            std::unordered_set<VertexID> &affected_nodes){
+    std::vector<std::pair<VertexID,VertexID>> result_nodes;
+    for(auto u:qgraph.GetAllVerticesID()){
+        for(auto v:sim[u]){
+             if(fragment.isInnerVertex(fragment.getGlobalID(v)) && affected_center.find(fragment.getGlobalID(v)) !=affected_center.end()){
+                 for(int i =0;i<get_num_workers();++i){
+                     Id_MessageBuffers.add_message(i,fragment.getGlobalID(v));
+                 }
+             }else if(fragment.isInnerVertex(fragment.getGlobalID(v))){
+                 result_nodes.emplace_back(v,0);
+             }
+//             if(affected_center.find(fragment.getGlobalID(v))!=affected_center.end()){
+                 for(int i =0;i<get_num_workers();++i){
+                     pair_MessageBuffers.add_message(i,std::pair<VertexID,VertexID>(u,fragment.getGlobalID(v)));
+                 }
+//             }
+        }
+    }
+    Id_MessageBuffers.sync_messages();
+    int i=0;
+    for(auto item:Id_MessageBuffers.get_messages()){
+        if(i%get_num_workers()==get_worker_id()){
+            result_nodes.emplace_back(fragment.getLocalID(item),1);
+        }
+        i++;
+    }
+    Id_MessageBuffers.reset_in_messages();
+    pair_MessageBuffers.sync_messages();
+    for(auto item:pair_MessageBuffers.get_messages()){
+        sim[item.first].insert(fragment.getLocalID(item.second));
+    }
+ //   cout<<result_nodes.size()<<endl;
+    return result_nodes;
+}
+
+
 
 int StrongparallelInc::cal_diameter_qgraph(Graph &qgraph){
           int temp_dia = 0;
@@ -418,8 +460,6 @@ void StrongparallelInc::extract_max_pg(Ball_View &ball_view,Graph &dgraph,Graph 
        }
    }
 
-
-
 void StrongparallelInc::print_ball_info(Graph &qgraph,std::unordered_map<VertexID, std::unordered_set<VertexID>> &S_w,VertexID w){
 
               std::unordered_map<VertexID,std::set<VertexID>> printset;
@@ -544,39 +584,44 @@ std::vector<StrongR>  StrongparallelInc::strong_parallel(Fragment &fragment,Grap
 }
 
 std::vector<StrongR>  StrongparallelInc::strong_parallel_inc(Fragment &fragment,Graph &dgraph, Graph &qgraph,
-                                                      std::unordered_map<VertexID,std::unordered_set<VertexID>> &global_dsim,
+                                                      std::unordered_map<VertexID,std::unordered_set<VertexID>> &fragment_sim,
                                                       std::vector<StrongR> &global_strong_r,
                                                       std::set<std::pair<VertexID,VertexID>> &add_edges,
                                                       std::set<std::pair<VertexID,VertexID>> &rm_edges){
     std::vector<StrongR> max_result;
     int d_Q = cal_diameter_qgraph(qgraph);
-    std::unordered_set<VertexID> affected_nodes = find_affected_area(fragment,dgraph,add_edges,rm_edges,d_Q);
-    update_fragment_inc(fragment,dgraph,affected_nodes, add_edges, rm_edges, d_Q);
-    std::unordered_map<VertexID, std::unordered_set<VertexID>> fragment_sim;
+//    std::unordered_map<VertexID, std::unordered_set<VertexID>> fragment_sim;
     /**
       *load local fragment sim
       */
-    for(auto u :qgraph.GetAllVerticesID()){
-        fragment_sim[u] = std::unordered_set<VertexID>();
-        for(auto v: global_dsim[u]){
-            if(fragment.has_vertex(v)){
-                fragment_sim[u].insert(fragment.getLocalID(v));
-            }
-        }
+    Dual_parallelInc dual_parallel_inc;
+    dual_parallel_inc.update_by_add_edges(fragment,dgraph,add_edges,true);
+    dual_parallel_inc.incremental_add_edges(fragment, dgraph, qgraph,fragment_sim,add_edges);
+    dual_parallel_inc.update_by_remove_edges(fragment,dgraph,rm_edges,true);
+    dual_parallel_inc.incremental_remove_edgs(fragment,dgraph,qgraph,fragment_sim,rm_edges);
+
+    std::unordered_set<VertexID> affected_center = find_affected_area(fragment,dgraph,add_edges,rm_edges,d_Q);
+    std::unordered_set<VertexID> affected_nodes = find_affected_area(fragment,dgraph,add_edges,rm_edges,2*d_Q);
+    update_fragment_inc(fragment,dgraph,affected_nodes, add_edges, rm_edges, 2*d_Q);
+    std::vector<std::pair<VertexID,VertexID>> cal_center_nodes = assign_task(fragment,qgraph,fragment_sim,affected_center,affected_nodes);
+    std::unordered_map<VertexID,VertexID> cache_center;
+    for(int i=0;i<global_strong_r.size();++i){
+        cache_center[global_strong_r[i].center()]=i;
     }
-    recalculate_incrementl_dual(dgraph,qgraph,fragment_sim,add_edges,rm_edges);
-    const std::unordered_set<VertexID> * innerVertices = fragment.getInnerVertices();
-    for (auto w : dgraph.GetAllVerticesID()) {
+//    cout<<"cache strong "<<global_strong_r.size()<<endl;
+    for (auto pa : cal_center_nodes) {
     /**
       * calculate ball for center w if w if a valid center
       */
-        if ((*innerVertices).find(fragment.getGlobalID(w))!=(*innerVertices).end() && valid_sim_w(qgraph,fragment_sim,w)){
-        if( affected_nodes.find(fragment.getGlobalID(w)) == affected_nodes.end()){
-            for(auto ballr:global_strong_r){
-                if(fragment.getLocalID(ballr.center()) == w){
-                    max_result.push_back(ballr);
-                }
-            }
+// if (valid_sim_w(qgraph,fragment_sim,w)){
+//        if(fragment.getGlobalID(w)==136){
+//            cout<<get_worker_id()<<endl;
+//        }
+        VertexID tai=pa.second;
+        VertexID w=pa.first;
+
+        if(tai==0){
+            max_result.push_back(global_strong_r[cache_center[fragment.getGlobalID(w)]]);
             continue;
         }
          clock_t start,end;
@@ -584,7 +629,14 @@ std::vector<StrongR>  StrongparallelInc::strong_parallel_inc(Fragment &fragment,
             /**
                *find d_hop_nodes for w in dgraph
                */
-
+//         if(fragment.getGlobalID(w)==136){
+//             for(auto u:qgraph.GetAllVerticesID()){
+//                 for(auto v:fragment_sim[u]){
+//                     cout<<u<<' '<<fragment.getGlobalID(v)<<endl;
+//                 }
+//             }
+//
+//          }
         std::unordered_set<VertexID> ball_node;
         dgraph.find_hop_nodes(w,d_Q,ball_node);
 
@@ -625,9 +677,10 @@ std::vector<StrongR>  StrongparallelInc::strong_parallel_inc(Fragment &fragment,
         dual_filter_match(refined_ball_view, qgraph,S_w,w,d_Q);
         extract_max_pg(refined_ball_view,dgraph,qgraph, w,S_w);
         out_global_result(fragment,qgraph,S_w);
+
         max_result.emplace_back(fragment.getGlobalID(w),S_w);
-        }
-    }
+//    }
+   }
     worker_barrier();
     return max_result;
 }
