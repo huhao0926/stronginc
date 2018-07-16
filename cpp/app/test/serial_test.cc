@@ -11,6 +11,7 @@
 #include "cpp/io/io_local.h"
 #include "cpp/core/global.h"
 #include "cpp/core/strongr.h"
+#include "cpp/core/view.h"
 #include<iostream>
 #include <fstream>
 #include<ctime>
@@ -33,24 +34,46 @@ public:
         GraphLoader dgraph_loader,qgraph_loader;
         Graph qgraph;
         qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
-        cout<<qgraph.GetNumEdges()<<endl;
+//        cout<<qgraph.GetNumEdges()<<endl;
+//        for(auto e:qgraph.GetAllEdges()){
+//            std::cout<<e.src()<<' '<<e.dst()<<endl;
+//        }
+//        qgraph.AddEdge(Edge(1,2,33));
+//        cout<<qgraph.GetNumEdges()<<endl;
+//        for(auto e:qgraph.GetAllEdges()){
+//            std::cout<<e.src()<<' '<<e.dst()<<endl;
+//        }
+//        qgraph.AddEdge(Edge(0,2,44));
+//        cout<<qgraph.GetNumEdges()<<endl;
+//        for(auto e:qgraph.GetAllEdges()){
+//            std::cout<<e.src()<<' '<<e.dst()<<endl;
+//        }
+//        qgraph.AddEdge(Edge(0,1,55));
+//        cout<<qgraph.GetNumEdges()<<endl;
+//        for(auto e:qgraph.GetAllEdges()){
+//            std::cout<<e.src()<<' '<<e.dst()<<endl;
+//        }
+        std::unordered_set<Edge> edge_set;
         for(auto e:qgraph.GetAllEdges()){
-            std::cout<<e.src()<<' '<<e.dst()<<endl;
+            edge_set.insert(e);
         }
-        qgraph.AddEdge(Edge(1,2,1));
-        cout<<qgraph.GetNumEdges()<<endl;
-        for(auto e:qgraph.GetAllEdges()){
-            std::cout<<e.src()<<' '<<e.dst()<<endl;
+        std::cout<<edge_set.size()<<endl;
+        edge_set.insert(Edge(0,1,44));
+        std::cout<<edge_set.size()<<' '<<(edge_set.find(Edge(0,1,55))!=edge_set.end())<<std::endl;
+        for(auto e:edge_set){
+            std::cout<<e.src()<<' '<<e.dst()<<' '<<e.attr()<<std::endl;
         }
-        qgraph.AddEdge(Edge(0,2,1));
-        cout<<qgraph.GetNumEdges()<<endl;
-        for(auto e:qgraph.GetAllEdges()){
-            std::cout<<e.src()<<' '<<e.dst()<<endl;
+
+        edge_set.insert(Edge(0,2,55));
+        std::cout<<edge_set.size()<<' '<<(edge_set.find(Edge(0,1,55))!=edge_set.end())<<std::endl;
+        for(auto e:edge_set){
+            std::cout<<e.src()<<' '<<e.dst()<<' '<<e.attr()<<std::endl;
         }
-        qgraph.AddEdge(Edge(0,1,1));
-        cout<<qgraph.GetNumEdges()<<endl;
-        for(auto e:qgraph.GetAllEdges()){
-            std::cout<<e.src()<<' '<<e.dst()<<endl;
+
+        edge_set.insert(Edge(1,2,88));
+        std::cout<<edge_set.size()<<' '<<(edge_set.find(Edge(0,1,55))!=edge_set.end())<<std::endl;
+        for(auto e:edge_set){
+            std::cout<<e.src()<<' '<<e.dst()<<' '<<e.attr()<<std::endl;
         }
     }
 
@@ -145,6 +168,33 @@ public:
       index +=1;
    }
  }
+
+    void test_view_contain(){
+
+        int index=1;
+        while(index<200){
+            Graph qgraph;
+            View vie;
+            GraphLoader qgraph_loader;
+            std::string q_vfile="../data/contain1/data"+std::to_string(index)+"/q.v";
+            std::string q_efile="../data/contain1/data"+std::to_string(index)+"/q.e";
+            qgraph_loader.LoadGraph(qgraph,q_vfile,q_efile);
+            for(int i=1;i<6;++i){
+                GraphLoader view_loader;
+                Graph* new_view = new Graph();
+                view_loader.LoadGraph(*new_view,"../data/contain1/data"+std::to_string(index)+"/view"+std::to_string(i)+".v","../data/contain1/data"+std::to_string(index)+"/view"+std::to_string(i)+".e");
+                vie.add_ViewGraph(new_view);
+            }
+            vie.containCheck(qgraph);
+            std::vector<int> result=vie.minContain(qgraph);
+            for(auto num:result){
+               std::cout<<num<<' ';
+            }
+            std::cout<<endl;
+//            vie.traverse_ViewGraph();
+            index+=1;
+        }
+    }
 private:
     std::string graph_vfile ="../data/synmtic.v";
     std::string graph_efile ="../data/synmtic.e";
@@ -164,7 +214,8 @@ int main(int argc, char *argv[]) {
 //  serial.test_dualsimulation();
 //  serial.test_dual_incremental();
 //  serial.test_strongsimulation();
-  serial.test_add_edges();
+//  serial.test_add_edges();
+  serial.test_view_contain();
 //  worker_finalize();
   return 0;
 }

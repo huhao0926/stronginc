@@ -6,7 +6,7 @@
 #include <boost/graph/compressed_sparse_row_graph.hpp>
 #include <boost/graph/iteration_macros.hpp>
 #include <boost/graph/properties.hpp>
-
+#include <boost/graph/copy.hpp>
 #include <vector>
 #include <memory>
 #include <unordered_set>
@@ -73,6 +73,11 @@ class Graph {
  friend class Fragment;
  public:
   Graph();
+
+  Graph(const Graph &other);
+
+  Graph& operator=(const Graph &other);
+
   ~Graph();
 
  public:

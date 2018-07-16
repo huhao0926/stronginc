@@ -2,6 +2,39 @@
 
 Graph::Graph() {}
 
+
+Graph::Graph(const Graph &other){
+    if(this != &other){
+        copy_graph(*graph_, *other.graph_);
+        vertex_index_map_ = boost::get(boost::vertex_index, *graph_);
+        edge_data_map_ = std::unique_ptr<EdgeDataMap>(
+          new EdgeDataMap(boost::get(boost::edge_weight, *graph_)));
+        vertices_label_.assign(other.vertices_label_.begin(),other.vertices_label_.end());
+        num_vertices_ = other.num_vertices_;
+        num_edges_ = other.num_edges_;
+    }
+}
+
+Graph& Graph::operator=(const Graph &other){
+//    if(this == &other){
+//        return *this;
+//    }else{
+//        graph_.release();
+//        vertex_index_map_.clear();
+//        //edge_data_map_.clear();
+//        vertices_label_.clear();
+//        copy_graph(*graph_, *other.graph_);
+//        vertex_index_map_ = boost::get(boost::vertex_index, *graph_);
+//        edge_data_map_ = std::unique_ptr<EdgeDataMap>(
+//          new EdgeDataMap(boost::get(boost::edge_weight, *graph_)));
+//        vertices_label_.assign(other.vertices_label_.begin(),other.vertices_label_.end());
+//        num_vertices_ = other.num_vertices_;
+//        num_edges_ = other.num_edges_;
+//        return *this;
+//    }
+    return *this;
+}
+
 Graph::~Graph() {}
 
 VertexLabel &Graph::GetVertexLabel(const VertexID vid) {

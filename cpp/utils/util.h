@@ -40,6 +40,10 @@ template<class T>
 
 int cal_diameter_qgraph(Graph &qgraph);
 
+void print_sim_vertex_result(Graph &qgraph,std::unordered_map<VertexID, std::unordered_set<VertexID>> &sim);
+
+void print_sim_edge_result(std::unordered_map<Edge,std::unordered_set<Edge>> &part);
+
 bool  query_labl_all_notsame(Graph &qgraph);
 
 void generate_connect_graphs_by_Dgraph(Graph &dgraph, Graph &qgraph, const int num_nodes);

@@ -14,6 +14,28 @@ int cal_diameter_qgraph(Graph &qgraph){
           return temp_dia;
 }
 
+void print_sim_vertex_result(Graph &qgraph,std::unordered_map<VertexID, std::unordered_set<VertexID>> &sim){
+        for(auto u:qgraph.GetAllVerticesID()){
+            std::cout<<u<<":";
+            for(auto v:sim[u]){
+                std::cout<<' '<<v;
+            }
+            std::cout<<endl;
+        }
+
+}
+
+void print_sim_edge_result(std::unordered_map<Edge,std::unordered_set<Edge>> &part){
+        std::unordered_map<Edge,std::unordered_set<Edge>>::iterator it;
+        for(it=part.begin();it !=part.end(); ++it){
+             std::cout<<it->first.src()<<' '<<it->first.dst()<<":";
+             for(auto e:it->second){
+                 std::cout<<' '<<e.src()<<' '<<e.dst();
+             }
+             std::cout<<endl;
+         }
+}
+
 bool  query_labl_all_notsame(Graph &qgraph){
      std::unordered_set<VertexLabel> labl_set;
      for (auto u:qgraph.GetAllVerticesID()){
