@@ -29,7 +29,7 @@ public:
         this->graph_vfile ="../data/"+test_data_name+"/"+test_data_name+".v";
         this->graph_efile ="../data/"+test_data_name+"/"+test_data_name+".e";
         this->r_file = "../data/"+test_data_name+"/"+test_data_name+".r";
-        this->base_qfile = "../data/"+test_data_name+"/query5/q";
+        this->base_qfile = "../data/"+test_data_name+"/query/q";
         this->base_add_file = "../data/"+test_data_name+"/inc/add_e";
         this->base_remove_file="../data/"+test_data_name+"/inc/rm_e";
         this->query_index = query_index;
@@ -664,7 +664,7 @@ private:
     std::string graph_vfile ="../data/yago/yago.v";
     std::string graph_efile ="../data/yago/yago.e";
     std::string r_file = "../data/yago/yago.r";
-    std::string base_qfile = "../data/yago/query5/q";
+    std::string base_qfile = "../data/yago/query/q";
     std::string base_add_file = "../data/yago/inc/add_e";
     std::string base_remove_file="../data/yago/inc/rm_e";
     int query_index = 1;
@@ -683,7 +683,7 @@ int main(int argc, char *argv[]) {
 //  StrongExr strongexr("yago",1);
 //  strongexr.generate_affected_center(200,0.06,"../data/affected_center.txt");
 //  strongexr.generate_outside_center(50000,30);
-  StrongExr strongexr("yago",3);
+  StrongExr strongexr("synmtic",3);
  // strongexr.print_dual_and_strong_information();
 //  strongexr.generate_query();
 //  strongexr.generate_affected_center(200,0.04,"../data/dbpedia/affected_center.txt");
@@ -693,7 +693,7 @@ int main(int argc, char *argv[]) {
  // strongexr.print_affected_center_info(10);
  strongexr.generate_query(200,5,1000);
  //strongexr.generate_all_random_edges(100000,20);
-  strongexr.print_evaluate_incremental_information(10);
+  //strongexr.print_evaluate_incremental_information(10);
   worker_finalize();
   return 0;
 }
