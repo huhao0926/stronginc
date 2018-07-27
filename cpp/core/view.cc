@@ -139,18 +139,23 @@ std::vector<int> View::minContain(Graph &qgraph){
 
 std::vector<StrongR>  View::queryByViews(Graph &dgraph,Graph &qgraph){
     vector<StrongR> max_result;
+    /*
     int index=1;
     for(int i=1;i<6;++i){
         GraphLoader view_loader;
         Graph* new_view = new Graph();
         view_loader.LoadGraph(*new_view,"../data/contain1/data"+std::to_string(index)+"/view"+std::to_string(i)+".v","../data/contain1/data"+std::to_string(index)+"/view"+std::to_string(i)+".e");
         add_ViewGraph(new_view);
-    }
+    }*/
     bool is_contain = containCheck(qgraph);
+  //  cout<<is_contain<<endl;
     if(!is_contain){
         return max_result;
     }
     std::vector<int> min_contain_vec = minContain(qgraph);
+   // for(auto n:min_contain_vec){
+  //      cout<<n<<endl;
+  //  }
     std::unordered_map<VertexID, std::unordered_set<VertexID>> max_query_sim;
     std::unordered_set<VertexID> view_nodes;
     std::unordered_set<Edge> view_edges;
@@ -164,17 +169,23 @@ std::vector<StrongR>  View::queryByViews(Graph &dgraph,Graph &qgraph){
         std::unordered_map<VertexID, std::unordered_set<VertexID>>  sim;
         bool initialized_sim = false;
         dualsim.dual_simulation(qgraph,*ViewGraph_list[num],sim,initialized_sim);
+        //print_sim_vertex_result(*ViewGraph_list[num],sim);
+        //cout<<res.size()<<endl;
+
         for(int i=0;i<res.size();++i){
             std::unordered_map<VertexID, std::unordered_set<VertexID>> ball_sim=res[i].ballr();
-            for(auto u:(*ViewGraph_list[i]).GetAllVerticesID()){
-                for(auto q_node :ball_sim[u]){
-                    for(auto v:sim[u]){
+            for(auto u:(*ViewGraph_list[num]).GetAllVerticesID()){
+                for(auto v :ball_sim[u]){
+                    for(auto q_node:sim[u]){
                         max_query_sim[q_node].insert(v);
+                        view_nodes.insert(v);
                     }
                 }
             }
         }
     }
+    //cout<<"dd1"<<endl;
+    //return max_result;
     for(auto e:qgraph.GetAllEdges()){
         std::unordered_set<Edge> eSet;
         VertexID source = e.src();
@@ -190,55 +201,61 @@ std::vector<StrongR>  View::queryByViews(Graph &dgraph,Graph &qgraph){
         }
     }
     Ball_View graph_view(view_nodes,view_edges);
+  //  cout<<graph_view.GetNumVertices()<<' '<<graph_view.GetNumEdges()<<endl;
+    //return max_result;
     int d_Q = cal_diameter_qgraph(qgraph);
+    dual_filter_match(graph_view,qgraph,max_query_sim);
+    //print_sim_vertex_result(qgraph,max_query_sim);
     for (auto w : dgraph.GetAllVerticesID()){
-        if(view_nodes.find(w) == view_nodes.end()){
+        if(!valid_sim_w(qgraph,max_query_sim,w)){
             continue;
         }
-    /**
-     *find d_hop_nodes for w in dgraph
-     */
-    std::unordered_set<VertexID> ball_node;
-    graph_view.find_hop_nodes(w,d_Q,ball_node);
+       /**
+         *find d_hop_nodes for w in dgraph
+        */
+       std::unordered_set<VertexID> ball_node;
+       graph_view.find_hop_nodes(w,d_Q,ball_node);
 
-    std::unordered_set<VertexID> ball_filter_node;
-    std::unordered_set<Edge> ball_filter_edge;
-    std::unordered_map<VertexID, std::unordered_set<VertexID>> S_w;
-    for(auto u : qgraph.GetAllVerticesID()){
-        for (auto v : max_query_sim[u]){
-            if(ball_node.find(v) != ball_node.end()){
+       std::unordered_set<VertexID> ball_filter_node;
+       std::unordered_set<Edge> ball_filter_edge;
+       std::unordered_map<VertexID, std::unordered_set<VertexID>> S_w;
+       for(auto u : qgraph.GetAllVerticesID()){
+          for (auto v : max_query_sim[u]){
+             if(ball_node.find(v) != ball_node.end()){
                 S_w[u].insert(v);
                 ball_filter_node.insert(v);
-            }
-        }
-    }
-    for(auto e: qgraph.GetAllEdges()){
-        VertexID sourceid=e.src();
-        VertexID targetid=e.dst();
-        for (auto sim_v1 : S_w[sourceid]){
-            for(auto sim_v2 : S_w[targetid]){
-                if (dgraph.ExistEdge(sim_v1,sim_v2)){
+             }
+          }
+       }
+       for(auto e: qgraph.GetAllEdges()){
+          VertexID sourceid=e.src();
+          VertexID targetid=e.dst();
+          for (auto sim_v1 : S_w[sourceid]){
+             for(auto sim_v2 : S_w[targetid]){
+                if (graph_view.ExistEdge(sim_v1,sim_v2)){
                     ball_filter_edge.insert(Edge(sim_v1,sim_v2,1));
                 }
-            }
-        }
-    }
+             }
+          }
+       }
+       //cout<<"view center "<<w<<endl;
+      // print_sim_vertex_result(qgraph,S_w);
+       Ball_View ball_view(ball_filter_node,ball_filter_edge);
 
-    Ball_View ball_view(ball_filter_node,ball_filter_edge);
-
-    std::unordered_set<VertexID> refined_ball_vertex;
-    std::unordered_set<Edge> refinded_ball_edge;
-    ball_view.find_connectivity_nodes(w,refined_ball_vertex);
-    for(auto e :ball_filter_edge){
-        if(refined_ball_vertex.find(e.src()) != refined_ball_vertex.end() && refined_ball_vertex.find(e.dst())!=refined_ball_vertex.end()){
-            refinded_ball_edge.insert(e);
-        }
-    }
-    Ball_View refined_ball_view(refined_ball_vertex,refinded_ball_edge);
-    rename_sim(refined_ball_view,qgraph,S_w);
-    dual_filter_match(refined_ball_view, qgraph,S_w,w,d_Q);
-    extract_max_pg(refined_ball_view,dgraph,qgraph, w,S_w);
-     max_result.emplace_back(w,S_w);
+       std::unordered_set<VertexID> refined_ball_vertex;
+       std::unordered_set<Edge> refinded_ball_edge;
+       ball_view.find_connectivity_nodes(w,refined_ball_vertex);
+       for(auto e :ball_filter_edge){
+          if(refined_ball_vertex.find(e.src()) != refined_ball_vertex.end() && refined_ball_vertex.find(e.dst())!=refined_ball_vertex.end()){
+              refinded_ball_edge.insert(e);
+          }
+       }
+       Ball_View refined_ball_view(refined_ball_vertex,refinded_ball_edge);
+       rename_sim(refined_ball_view,qgraph,S_w);
+       dual_filter_match(refined_ball_view, qgraph,S_w);
+       extract_max_pg(refined_ball_view,dgraph,qgraph, w,S_w);
+       max_result.emplace_back(w,S_w);
+      // break;
     }
     return max_result;
 }
@@ -318,15 +335,15 @@ void View::ss_counter_initialization(Ball_View &ball_view,Graph &qgraph,
  }
 
 void View::dual_filter_match(Ball_View &refined_ball, Graph &qgraph,
-                      std::unordered_map<VertexID, std::unordered_set<VertexID>> &S_w,VertexID w,int d_Q){
+                      std::unordered_map<VertexID, std::unordered_set<VertexID>> &S_w){
         std::set<std::pair<VertexID,VertexID> > filter_set;
         std::unordered_map<VertexID, std::vector<int> > sim_counter_pre,sim_counter_post;
         ss_counter_initialization(refined_ball,qgraph, sim_counter_pre,sim_counter_post,S_w);
-        push_phase(refined_ball,qgraph,w,d_Q, filter_set, sim_counter_pre, sim_counter_post,S_w);
+        push_phase(refined_ball,qgraph,filter_set, sim_counter_pre, sim_counter_post,S_w);
         decremental_refine(refined_ball,qgraph, filter_set,sim_counter_pre,sim_counter_post,S_w);
    }
 
-void View::push_phase(Ball_View &ball,Graph &qgraph,VertexID w,int d_Q,
+void View::push_phase(Ball_View &ball,Graph &qgraph,
                           std::set<std::pair<VertexID,VertexID>> &filter_set,
                           std::unordered_map<VertexID, std::vector<int>> &sim_counter_pre,
                           std::unordered_map<VertexID, std::vector<int>> &sim_counter_post,

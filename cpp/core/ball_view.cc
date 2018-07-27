@@ -118,6 +118,7 @@ void Ball_View::find_hop_nodes(VertexID vid, int d_hop,std::unordered_set<Vertex
     q.push(vid);
     color.insert(vid);
     dis[vid] =0;
+    result.insert(vid);
     while(!q.empty()){
        VertexID root = q.front();
        if(dis[root] == d_hop){
@@ -153,6 +154,7 @@ void  Ball_View::find_connectivity_nodes(VertexID vid, std::unordered_set<Vertex
     q.push(vid);
     color.insert(vid);
     dis[vid] =0;
+    result.insert(vid);
     while(!q.empty()){
        VertexID root = q.front();
        q.pop();

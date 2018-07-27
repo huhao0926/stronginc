@@ -135,7 +135,7 @@ public:
           Graph qgraph;
           generate.generate_connect_graphs_by_Dgraph(dgraph,qgraph,generate_query_nodes);
           int d_Q=cal_diameter_qgraph(qgraph);
-          if(d_Q>2){
+          if(d_Q>2 || !query_labl_all_notsame(qgraph)){
               continue;
           }
           clock_t s0,e0;
@@ -181,7 +181,6 @@ public:
       }
          info_file.close();
   }
-
 
   void print_evaluate_incremental_information(int circle_num){
         Graph dgraph;
@@ -401,7 +400,7 @@ public:
 }
 
 
-  std::vector<StrongR> calculate_direct_strong_inc(Graph &dgraph,Graph &qgraph,
+std::vector<StrongR> calculate_direct_strong_inc(Graph &dgraph,Graph &qgraph,
                                       std::set<std::pair<VertexID,VertexID>> &add_edges,
                                       std::set<std::pair<VertexID,VertexID>> &rm_edges){
           StrongSim strongsim;

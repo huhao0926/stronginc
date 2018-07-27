@@ -13,6 +13,20 @@ public:
 
     ~Ball_View();
 
+    /**
+     * @return vertex size in the graph
+     */
+    inline size_t GetNumVertices() const {
+      return vertices_.size();
+    }
+
+    /**
+     * @return edge size in the graph
+     */
+    inline size_t GetNumEdges() const {
+      return edges_.size();
+    }
+
     Ball_View(std::unordered_set<VertexID> &vertices,std::unordered_set<Edge>  &edges);
 
     std::unordered_set<VertexID>&  GetAllVerticesID();

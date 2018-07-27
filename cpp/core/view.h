@@ -51,9 +51,9 @@ public:
                                      std::unordered_map<VertexID, std::unordered_set<VertexID>> &S_w);
 
     void dual_filter_match(Ball_View &refined_ball, Graph &qgraph,
-                      std::unordered_map<VertexID, std::unordered_set<VertexID>> &S_w,VertexID w,int d_Q);
+                      std::unordered_map<VertexID, std::unordered_set<VertexID>> &S_w);
 
-    void push_phase(Ball_View &ball,Graph &qgraph,VertexID w,int d_Q,
+    void push_phase(Ball_View &ball,Graph &qgraph,
                           std::set<std::pair<VertexID,VertexID>> &filter_set,
                           std::unordered_map<VertexID, std::vector<int>> &sim_counter_pre,
                           std::unordered_map<VertexID, std::vector<int>> &sim_counter_post,

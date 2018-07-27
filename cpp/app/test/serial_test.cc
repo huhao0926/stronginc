@@ -36,6 +36,7 @@ public:
         this->base_add_file = "../data/"+test_data_name+"/inc/add_e";
         this->base_remove_file="../data/"+test_data_name+"/inc/rm_e";
     }
+
     std::string get_query_vfile(int index){
         return base_qfile+std::to_string(index)+".v";
     }
@@ -62,6 +63,18 @@ public:
         boost::filesystem::create_directory(file_name);
     }
 public:
+
+    void generate_random_dgraph(int num_nodes=2000,double a = 1.20,int l = 10){
+        Graph dgraph;
+        Generate generate;
+        generate.generate_random_dgraph(dgraph,num_nodes,a,l);
+        generate.save_grape_file(dgraph,graph_vfile,graph_efile);
+        Graph dgraph1;
+        GraphLoader dgraph_loader;
+        dgraph_loader.LoadGraph(dgraph1,graph_vfile,graph_efile);
+        cout<<dgraph1.GetNumVertices()<<' '<<dgraph1.GetNumEdges()<<endl;
+    }
+
     void test_add_edges(){
         int index = 1;
         GraphLoader dgraph_loader,qgraph_loader;
@@ -251,7 +264,10 @@ public:
             bool is_contain = vie.containCheck(qgraph);
             if(is_contain){
                 std::vector<int> result=vie.minContain(qgraph);
-                cout<<"minicontain nums ";
+                if(result.size()==3){
+                    continue;
+                }
+                cout<<index<<' '<<"minicontain nums ";
                 for(auto num:result){
                    std::cout<<num<<' ';
                 }
@@ -265,10 +281,76 @@ public:
     }
 }
 
+    vector<float> compare_direct_and_view_strongresult(Graph &qgraph, std::vector<StrongR> &direct_strong_result,std::vector<StrongR> &view_strong_result){
+        vector<float> result;
+        if(direct_strong_result.size()!=view_strong_result.size()){
+            cout<<"size not the same "<<direct_strong_result.size()<<' '<<view_strong_result.size()<<endl;
+            return result;
+        }
+        for(int i=0;i<direct_strong_result.size();++i){
+            if(direct_strong_result[i].center() != view_strong_result[i].center()){
+                cout<<"have different center result"<<endl;
+                return result;
+            }
+        }
+
+        for(int i=0;i<direct_strong_result.size();++i){
+            std::unordered_map<VertexID, std::unordered_set<VertexID>> dirctsim=direct_strong_result[i].ballr();
+            std::unordered_map<VertexID, std::unordered_set<VertexID>> viewsim=view_strong_result[i].ballr();
+            if(dual_the_same(qgraph,dirctsim,viewsim)){
+                result.push_back(1.0);
+            }else{
+            std::unordered_set<VertexID> direct_result_node;
+            std::unordered_set<VertexID> view_result_node;
+            for(auto u:qgraph.GetAllVerticesID()){
+                for(auto v:dirctsim[u]){
+                    direct_result_node.insert(v);
+                }
+                for(auto v:viewsim[u]){
+                    view_result_node.insert(v);
+                }
+            }
+            if(diff(view_result_node,direct_result_node).size()>0){
+               cout<<"error : view result > direct result"<<endl;
+               return result;
+            }else{
+                //cout<<"view node is subset of direct node "<<direct_result_node.size()<<' '<<view_result_node.size()<<endl;
+                result.push_back(float(view_result_node.size()*1.0/direct_result_node.size()));
+            }
+            }
+        }
+        return result;
+    }
+
+
     void test_view_query(){
+        int index =1;
+        Graph dgraph;
+        GraphLoader dgraph_loader,qgraph_loader;
+        dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
+       // cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<endl;
+        while(index<200){
+            Graph qgraph;
+            qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
+            View vie;
+            for(int i=1;i<6;++i){
+                GraphLoader view_loader;
+                Graph* new_view = new Graph();
+                view_loader.LoadGraph(*new_view,get_view_vfile(index,i),get_view_efile(index,i));
+                vie.add_ViewGraph(new_view);
+            }
+            std::vector<StrongR> view_strong_result = vie.queryByViews(dgraph,qgraph);
+            StrongSim strongs;
+            vector<StrongR> direct_strong_result= strongs.strong_simulation_sim(dgraph,qgraph);
 
-
- }
+           //cout<<view_strong_result.size()<<' '<<direct_strong_result.size()<<endl;
+           vector<float> compare_rate = compare_direct_and_view_strongresult(qgraph,direct_strong_result,view_strong_result);
+           for(auto f:compare_rate){
+               cout<<f<<endl;
+            }
+            index+=1;
+        }
+    }
 private:
     int query_index = 1;
     std::string test_data_name ="yago";
@@ -289,11 +371,13 @@ int main(int argc, char *argv[]) {
   google::ShutdownGoogleLogging();
 //  init_workers();
   Serial serial("synmtic",1);
+  //serial.generate_random_dgraph(20000,1.20,10);
 //  serial.test_dualsimulation();
 //  serial.test_dual_incremental();
 //  serial.test_strongsimulation();
 //  serial.test_add_edges();
-  serial.generate_query_view(2);
+//  serial.generate_query_view(3);
+    serial.test_view_query();
 //  worker_finalize();
   return 0;
 }

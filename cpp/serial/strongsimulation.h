@@ -10,6 +10,7 @@
 #include "dualsimulation.h"
 #include "cpp/core/strongr.h"
 #include "cpp/core/ball_view.h"
+#include "cpp/utils/util.h"
 class StrongSim{
   public:
       StrongSim();

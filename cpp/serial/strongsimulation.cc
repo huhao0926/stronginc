@@ -323,8 +323,8 @@ std::vector<StrongR> StrongSim::strong_simulation_sim(Graph &dgraph, Graph &qgra
               extract_max_pg(refined_ball_view,dgraph,qgraph, w,S_w);
 
               max_result.emplace_back(w,S_w);
-//              print_ball_info(qgraph,S_w,w);
-//              break;
+              //print_ball_info(qgraph,S_w,w);
+            // break;
              // std::cout<<"calculate one ball time "<<(float)(end-start)/CLOCKS_PER_SEC<<"s"<<std::endl;
               }
           }
