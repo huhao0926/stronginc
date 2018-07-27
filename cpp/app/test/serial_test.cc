@@ -12,21 +12,54 @@
 #include "cpp/core/global.h"
 #include "cpp/core/strongr.h"
 #include "cpp/core/view.h"
+#include "cpp/utils/generate.h"
 #include<iostream>
 #include <fstream>
 #include<ctime>
-//#include <sstream>
+
+#include<boost/filesystem.hpp>
 #define random(a,b) (rand()%(b-a+1)+a)
 
 
 class Serial{
 public:
+    Serial(){}
+
+    Serial(std::string test_data_name,int query_index){
+        this->query_index = query_index;
+        this->test_data_name=test_data_name;
+        this->graph_vfile ="../data/"+test_data_name+"/"+test_data_name+".v";
+        this->graph_efile ="../data/"+test_data_name+"/"+test_data_name+".e";
+        this->view_file = "../data/"+test_data_name+"/views/view";
+        this->r_file = "../data/"+test_data_name+"/"+test_data_name+".r";
+        this->base_qfile = "../data/"+test_data_name+"/query/q";
+        this->base_add_file = "../data/"+test_data_name+"/inc/add_e";
+        this->base_remove_file="../data/"+test_data_name+"/inc/rm_e";
+    }
     std::string get_query_vfile(int index){
-        return "../data/synmticquery/q"+std::to_string(index)+".v";
+        return base_qfile+std::to_string(index)+".v";
     }
 
     std::string get_query_efile(int index){
-        return "../data/synmticquery/q"+std::to_string(index)+".e";
+        return base_qfile+std::to_string(index)+".e";
+    }
+
+    std::string get_view_vfile(int query_index,int view_index){
+        return view_file+std::to_string(query_index)+"/view"+std::to_string(view_index)+".v";
+    }
+    std::string get_view_efile(int query_index,int view_index){
+       return view_file+std::to_string(query_index)+"/view"+std::to_string(view_index)+".e";
+    }
+
+    bool is_exist_file(std::string file_name){
+        return boost::filesystem::is_directory(file_name);
+    }
+
+    void make_dir(std::string file_name){
+        if(is_exist_file(file_name)){
+             return ;
+        }
+        boost::filesystem::create_directory(file_name);
     }
 public:
     void test_add_edges(){
@@ -170,7 +203,6 @@ public:
  }
 
     void test_view_contain(){
-
         int index=1;
         while(index<200){
             Graph qgraph;
@@ -194,13 +226,59 @@ public:
 //            vie.traverse_ViewGraph();
             index+=1;
         }
+ }
+
+    void generate_query_view(int generate_view_nodes){
+        int index = 1;
+        Generate generate;
+        while(index<200){
+            Graph qgraph;
+            View vie;
+            GraphLoader qgraph_loader;
+           // cout<<is_exist_file(view_file+std::to_string(index));
+            string tmp_path = view_file+std::to_string(index);
+            if(!is_exist_file(tmp_path)){
+                 //cout<<"file does not exist,prepare to mkdir"<<endl;
+                 make_dir(tmp_path);
+            }
+            qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
+            for(int i=1;i<6;++i){
+                GraphLoader view_loader;
+                Graph* new_view = new Graph();
+                generate.generate_connect_graphs_by_Dgraph(qgraph,*new_view,generate_view_nodes);
+                vie.add_ViewGraph(new_view);
+            }
+            bool is_contain = vie.containCheck(qgraph);
+            if(is_contain){
+                std::vector<int> result=vie.minContain(qgraph);
+                cout<<"minicontain nums ";
+                for(auto num:result){
+                   std::cout<<num<<' ';
+                }
+                std::cout<<endl;
+                std::vector<Graph*> tmp_view_list= vie.get_ViewGraph_list();
+                for(int i=0;i<tmp_view_list.size();++i){
+                    generate.save_grape_file(*tmp_view_list[i],get_view_vfile(index,i+1),get_view_efile(index,i+1));
+                }
+                index++;
+            }
     }
+}
+
+    void test_view_query(){
+
+
+ }
 private:
-    std::string graph_vfile ="../data/synmtic.v";
-    std::string graph_efile ="../data/synmtic.e";
-    std::string r_file = "../data/synmtic.r";
-    std::string base_add_file = "../data/incsynmtic/add_e";
-    std::string base_remove_file="../data/incsynmtic/rm_e";
+    int query_index = 1;
+    std::string test_data_name ="yago";
+    std::string graph_vfile ="../data/yago/yago.v";
+    std::string graph_efile ="../data/yago/yago.e";
+    std::string view_file = "../data/yago/views/view";
+    std::string r_file = "../data/yago/yago.r";
+    std::string base_qfile = "../data/yago/query/q";
+    std::string base_add_file = "../data/yago/inc/add_e";
+    std::string base_remove_file="../data/yago/inc/rm_e";
 };
 
 int main(int argc, char *argv[]) {
@@ -210,12 +288,12 @@ int main(int argc, char *argv[]) {
   google::InitGoogleLogging("test for working");
   google::ShutdownGoogleLogging();
 //  init_workers();
-  Serial serial;
+  Serial serial("synmtic",1);
 //  serial.test_dualsimulation();
 //  serial.test_dual_incremental();
 //  serial.test_strongsimulation();
 //  serial.test_add_edges();
-  serial.test_view_contain();
+  serial.generate_query_view(2);
 //  worker_finalize();
   return 0;
 }

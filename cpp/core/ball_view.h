@@ -4,6 +4,7 @@
 #include "cpp/core/vertex.h"
 #include<unordered_set>
 #include<unordered_map>
+#include <queue>
 /*create a view graph for base graph,just fileter and select partial nodes and edges info from base graph.
  */
 class Ball_View{
@@ -25,11 +26,37 @@ public:
     *get all childrens id for a node
     */
     std::unordered_set<VertexID>&  GetChildrenID(const VertexID w);
-   /**
-    *if view exsist a edge
-    */
+    /**
+     *if view exsist a edge
+     */
     bool ExistEdge(VertexID src, VertexID dst);
 
+    /**
+     *get distance from vid to all nodes in undirected  graph
+     un_reached return INT_MAX
+     */
+    void shortest_distance(VertexID vid,std::unordered_map<VertexID,int> &dis);
+
+    /**
+     * get distance from u to v in undirected graph
+       un_reached return INT_MAX
+     */
+    int shortest_distance(VertexID source_id,VertexID target_id);
+
+    /**
+     *find d_hop from node u in undirectd graph
+     */
+    void find_hop_nodes(VertexID vid, int d_hop,std::unordered_set<VertexID> &result);
+
+    /**
+     *find connetivity nodes from u in graph
+     */
+    void  find_connectivity_nodes(VertexID vid, std::unordered_set<VertexID> &result);
+
+    /**
+     *find d_hop from node set in undirected graph
+     */
+    void find_hop_nodes(std::unordered_set<VertexID> &node_set,int d_hop,std::unordered_set<VertexID> &result);
 private:
 /*
    **vertices_ partial nodes
