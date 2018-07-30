@@ -64,6 +64,32 @@ public:
     }
 public:
 
+  void generate_query(int generate_query_nums,int generate_query_nodes, int max_calculate_center_nodes){
+      Graph dgraph;
+      Generate generate;
+      GraphLoader dgraph_loader;
+      dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
+      std::cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<std::endl;
+      int i=1;
+      while(i<=generate_query_nums){
+          Graph qgraph;
+          generate.generate_connect_graphs_by_Dgraph(dgraph,qgraph,generate_query_nodes);
+          int d_Q=cal_diameter_qgraph(qgraph);
+          if(d_Q>2 || !query_labl_all_notsame(qgraph)){
+              continue;
+          }
+          clock_t s0,e0;
+          s0 =clock();
+          std::unordered_set<VertexID> max_dual_set = generate.get_dual_node_result(dgraph,qgraph);
+          e0 =clock();
+          if(max_dual_set.size()<=max_calculate_center_nodes){
+              generate.save_grape_file(qgraph,get_query_vfile(i),get_query_efile(i));
+              std::cout<<i<<' '<<"calculate dual time"<<(float)(e0-s0)/CLOCKS_PER_SEC<<"s"<<' '<<max_dual_set.size()<<std::endl;
+              i++;
+          }
+      }
+  }
+
     void generate_random_dgraph(int num_nodes=2000,double a = 1.20,int l = 10){
         Graph dgraph;
         Generate generate;
@@ -322,7 +348,6 @@ public:
         return result;
     }
 
-
     void test_view_query(){
         int index =1;
         Graph dgraph;
@@ -346,7 +371,7 @@ public:
            //cout<<view_strong_result.size()<<' '<<direct_strong_result.size()<<endl;
            vector<float> compare_rate = compare_direct_and_view_strongresult(qgraph,direct_strong_result,view_strong_result);
            for(auto f:compare_rate){
-               cout<<f<<endl;
+               cout<<index<<' '<<f<<endl;
             }
             index+=1;
         }
@@ -370,13 +395,14 @@ int main(int argc, char *argv[]) {
   google::InitGoogleLogging("test for working");
   google::ShutdownGoogleLogging();
 //  init_workers();
-  Serial serial("synmtic",1);
-  //serial.generate_random_dgraph(20000,1.20,10);
+  Serial serial("paint",1);
+  //serial.generate_random_dgraph(100,1.20,5);
+  //serial.generate_query(200,5,40);
 //  serial.test_dualsimulation();
 //  serial.test_dual_incremental();
 //  serial.test_strongsimulation();
 //  serial.test_add_edges();
-//  serial.generate_query_view(3);
+    serial.generate_query_view(3);
     serial.test_view_query();
 //  worker_finalize();
   return 0;

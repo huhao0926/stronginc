@@ -38,6 +38,18 @@ template<class T>
 		return ret;
 }
 
+template<class T>
+  std::unordered_set<T> unions(const std::unordered_set<T> &a, const std::unordered_set<T>& b) {
+		std::unordered_set<T> ret;
+		for (auto ele : a) {
+			ret.insert(ele);
+		}
+		for (auto ele :b){
+		    ret.insert(ele);
+		}
+		return ret;
+}
+
 int cal_diameter_qgraph(Graph &qgraph);
 
 void print_sim_vertex_result(Graph &qgraph,std::unordered_map<VertexID, std::unordered_set<VertexID>> &sim);

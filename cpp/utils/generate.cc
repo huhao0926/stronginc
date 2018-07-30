@@ -117,6 +117,7 @@ void Generate::save_grape_file(Graph &qgraph, const std::string &v_file, const s
 	}
 	out_efile.close();
 }
+
 std::unordered_set<VertexID> Generate::get_dual_node_result(Graph &dgraph,Graph &qgraph){
         std::unordered_map<VertexID, std::unordered_set<VertexID>> sim;
         DualSim dualsim;

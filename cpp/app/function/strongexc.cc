@@ -32,6 +32,8 @@ public:
         this->base_qfile = "../data/"+test_data_name+"/query/q";
         this->base_add_file = "../data/"+test_data_name+"/inc/add_e";
         this->base_remove_file="../data/"+test_data_name+"/inc/rm_e";
+        this->base_add_affected_center_file ="../data/"+test_data_name+"/inc/affectedcenter_adde.txt";
+        this->base_remove_affected_center_file ="../data/"+test_data_name+"/inc/affectedcenter_rme.txt";
         this->query_index = query_index;
     }
     std::string get_query_vfile(int index){
@@ -156,7 +158,7 @@ public:
       GraphLoader dgraph_loader,query_loader;
       dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
       std::cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<std::endl;
-      std::fstream info_file("../data/dbpedia/query5/query_info.txt",std::ios::out);
+      std::fstream info_file("../data/yago/query/query_info.txt",std::ios::out);
       if(!info_file)
 	   {
 	    	std::cout<<"the outfile can  not construct";
@@ -291,9 +293,11 @@ public:
 	outfile.close();
 }
 
-  void generate_affected_center(int edge_num,double afa,std::string affected_center_file){
+  void generate_affected_center(int edge_num,double afa){
      Generate generate;
      Graph dgraph,qgraph;
+     std::vector<std::pair<VertexID,VertexID>> dgraph_edges_pair;
+     LoadEdges(dgraph_edges_pair,graph_efile);
      GraphLoader dgraph_loader,qgraph_loader;
      dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
      qgraph_loader.LoadGraph(qgraph,get_query_vfile(query_index),get_query_efile(query_index));
@@ -311,26 +315,55 @@ public:
              center_nodes_list.push_back(i);
           }
      }
-     std::fstream outfile(affected_center_file,std::ios::out);
-     outfile.close();
+     std::vector<std::pair<VertexID,VertexID>> affected_center_edges_list,outside_center_edges_list;
+     std::set<std::pair<VertexID,VertexID>> affected_center_edges_set;
+     for(auto e:dgraph_edges_pair){
+         if(affectted_center_node.find(e.first)!=affectted_center_node.end() || affectted_center_node.find(e.second)!=affectted_center_node.end()){
+             affected_center_edges_list.push_back(e);
+             affected_center_edges_set.insert(e);
+         }else{
+             outside_center_edges_list.push_back(e);
+         }
+     }
+     std::fstream write_affectedcenter_add(base_add_affected_center_file,std::ios::out);
+     std::fstream write_affectedcenter_rm(base_remove_affected_center_file,std::ios::out);
+     write_affectedcenter_add.close();
+     write_affectedcenter_rm.close();
+     int i=0,j=0;
+     std::set<std::pair<VertexID,VertexID>> add_edges,rm_edges;
      std::unordered_set<VertexID> edge_affected_nodes;
-     int i =0;
-     std::set<pair<VertexID,VertexID>> exist_edges,add_edges;
-     while(i<edge_num){
-         std::pair<VertexID,VertexID> e=generate.generate_one_add_edge_by_nodelist(center_nodes_list,exist_edges,add_edges);
+     while(i<=edge_num && j<=edge_num){
+         std::pair<VertexID,VertexID> add_e=generate.generate_one_add_edge_by_nodelist(center_nodes_list,affected_center_edges_set,add_edges);
          std::set<pair<VertexID,VertexID>> tmp_set;
-         tmp_set.insert(e);
+         tmp_set.insert(add_e);
          std::unordered_set<VertexID> e_affected_nodes = find_affected_area(dgraph,tmp_set,d_Q);
          e_affected_nodes = intersection(e_affected_nodes,max_dual_set);
          e_affected_nodes = diff(e_affected_nodes,edge_affected_nodes);
          if((e_affected_nodes.size()!=0)&& (e_affected_nodes.size()*1.0/max_dual_set.size()<=afa)){
-          add_edges.insert(e);
-          save_edges_app(tmp_set,affected_center_file);
-          edge_affected_nodes = find_affected_area(dgraph,add_edges,d_Q);
-          edge_affected_nodes=intersection(edge_affected_nodes,max_dual_set);
-          std::cout<<i<<' '<<e_affected_nodes.size()<<' '<<edge_affected_nodes.size()<<std::endl;
-          i++;
+             add_edges.insert(add_e);
+             save_edges_app(tmp_set,base_add_affected_center_file);
+             edge_affected_nodes = unions(e_affected_nodes,edge_affected_nodes);
+             std::cout<<"add "<<i<<' '<<e_affected_nodes.size()<<' '<<edge_affected_nodes.size()<<std::endl;
+             i++;
          }
+        if(edge_affected_nodes.size() ==max_dual_set.size()){
+          break;
+        }
+        tmp_set.clear();
+        e_affected_nodes.clear();
+        std::pair<VertexID,VertexID> rm_e=generate.generate_one_remove_edge_by_list(affected_center_edges_list,rm_edges,rm_edges);
+         //std::set<pair<VertexID,VertexID>> tmp_set;
+        tmp_set.insert(rm_e);
+        e_affected_nodes = find_affected_area(dgraph,tmp_set,d_Q);
+        e_affected_nodes = intersection(e_affected_nodes,max_dual_set);
+        e_affected_nodes = diff(e_affected_nodes,edge_affected_nodes);
+        if((e_affected_nodes.size()!=0)&& (e_affected_nodes.size()*1.0/max_dual_set.size()<=afa)){
+           rm_edges.insert(rm_e);
+           save_edges_app(tmp_set,base_remove_affected_center_file);
+           edge_affected_nodes = unions(e_affected_nodes,edge_affected_nodes);
+           std::cout<<"rm "<<j<<' '<<e_affected_nodes.size()<<' '<<edge_affected_nodes.size()<<std::endl;
+           j++;
+        }
         if(edge_affected_nodes.size() ==max_dual_set.size()){
           break;
         }
@@ -421,7 +454,7 @@ std::vector<StrongR> calculate_direct_strong_inc(Graph &dgraph,Graph &qgraph,
           return result;
  }
 
- void test_strongsimulation_inc(std::string affecte_center_file,int circle_num){
+ void test_strongsimulation_inc(int circle_num){
   StrongInc stronginc;
   StrongSim strongsim;
   DualSim dualsim;
@@ -430,14 +463,15 @@ std::vector<StrongR> calculate_direct_strong_inc(Graph &dgraph,Graph &qgraph,
   GraphLoader dgraph_loader,qgraph_loader;
   dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
   int index =query_index;
+  //cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<endl;
   Generate generate;
       Graph qgraph;
       qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
       std::unordered_map<VertexID, std::unordered_set<VertexID>> sim;
       clock_t s0,e0;
       s0 =clock();
-//      std::vector<StrongR> strongsimr = strongsim.strong_simulation_sim(dgraph,qgraph);
-      std::vector<StrongR> strongsimr;
+      std::vector<StrongR> strongsimr = strongsim.strong_simulation_sim(dgraph,qgraph);
+//      std::vector<StrongR> strongsimr;
       e0 =clock();
       std::cout<<"calculate original strong"<<(float)(e0-s0)/CLOCKS_PER_SEC<<"s"<<std::endl;
       bool initialized_sim=false;
@@ -445,8 +479,9 @@ std::vector<StrongR> calculate_direct_strong_inc(Graph &dgraph,Graph &qgraph,
       std::unordered_set<VertexID> max_dual_set =generate.get_dual_node_result(dgraph,qgraph);
       std::cout<<"maxduao "<<max_dual_set.size()<<std::endl;
       int j=1;
-      std::vector<std::pair<VertexID,VertexID>> affected_center_edges;
-      LoadEdges(affected_center_edges,affecte_center_file);
+      std::vector<std::pair<VertexID,VertexID>> affected_center_add_edges,affected_center_rm_edges;
+      LoadEdges(affected_center_add_edges,base_add_affected_center_file);
+      LoadEdges(affected_center_rm_edges,base_remove_affected_center_file);
       std::fstream outfile("runtime.txt",std::ios::out);
       outfile.close();
       while (j<=circle_num){
@@ -455,11 +490,16 @@ std::vector<StrongR> calculate_direct_strong_inc(Graph &dgraph,Graph &qgraph,
           dgraph_loaddir.LoadGraph(dgraphdir,graph_vfile,graph_efile);
           dgraph_loadinc.LoadGraph(dgraphinc,graph_vfile,graph_efile);
           std::set<std::pair<VertexID,VertexID>> add_edges,rm_edges;
-         Load_bunch_edges(add_edges,base_add_file,j);
-         Load_bunch_edges(rm_edges,base_remove_file,j);
-          for(int i=0;i<affected_center_edges.size();i++){
-              if(i<(affected_center_edges.size()/circle_num+1)*j){
-                  add_edges.insert(affected_center_edges[i]);
+        // Load_bunch_edges(add_edges,base_add_file,j);
+        // Load_bunch_edges(rm_edges,base_remove_file,j);
+          for(int i=0;i<affected_center_add_edges.size();i++){
+              if(i<(affected_center_add_edges.size()/circle_num+1)*j){
+                  add_edges.insert(affected_center_add_edges[i]);
+              }
+          }
+          for(int i=0;i<affected_center_rm_edges.size();i++){
+              if(i<(affected_center_rm_edges.size()/circle_num+1)*j){
+                  rm_edges.insert(affected_center_rm_edges[i]);
               }
           }
           std::vector<StrongR> tmp_r;
@@ -538,7 +578,6 @@ std::set<std::pair<VertexID,VertexID>> generate_all_random_add_edges(std::set<st
     }
    return add_edges;
 }
-
 
 std::set<std::pair<VertexID,VertexID>> generate_all_random_remove_edges(std::set<std::pair<VertexID,VertexID>> &exist_edges,int dgraph_num_vertices,int num_edges){
     srand( (unsigned)time(0));
@@ -666,6 +705,8 @@ private:
     std::string base_qfile = "../data/yago/query/q";
     std::string base_add_file = "../data/yago/inc/add_e";
     std::string base_remove_file="../data/yago/inc/rm_e";
+    std::string base_add_affected_center_file ="../data/yago/inc/affectedcenter_adde.txt";
+    std::string base_remove_affected_center_file ="../data/yago/inc/affectedcenter_rme.txt";
     int query_index = 1;
 
 };
@@ -682,15 +723,16 @@ int main(int argc, char *argv[]) {
 //  StrongExr strongexr("yago",1);
 //  strongexr.generate_affected_center(200,0.06,"../data/affected_center.txt");
 //  strongexr.generate_outside_center(50000,30);
-  StrongExr strongexr("synmtic",3);
- // strongexr.print_dual_and_strong_information();
+  string base_name="yago";
+  StrongExr strongexr(base_name,3);
+ //strongexr.print_dual_and_strong_information();
 //  strongexr.generate_query();
-//  strongexr.generate_affected_center(200,0.04,"../data/dbpedia/affected_center.txt");
+  //strongexr.generate_affected_center(200,0.04);
   //strongexr.generate_outside_center(50000,10);
-//  strongexr.test_strongsimulation_inc("../data/dbpedia/affected_center.txt",30);
+  strongexr.test_strongsimulation_inc(20);
 //strongexr.first_strong_strongInc(30);
  // strongexr.print_affected_center_info(10);
- strongexr.generate_query(200,5,1000);
+ //strongexr.generate_query(200,5,1000);
  //strongexr.generate_all_random_edges(100000,20);
   //strongexr.print_evaluate_incremental_information(10);
   worker_finalize();
