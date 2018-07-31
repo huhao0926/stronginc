@@ -27,7 +27,13 @@ public:
 
     ~Generate();
 
+    std::vector<VertexLabel> get_graph_label_vec(Graph &graph);
+
     void generate_random_dgraph(Graph &graph,int num_nodes=2000,double a = 1.20,int l = 200);
+
+    void generate_random_connectivity_graph(Graph &graph,int num_nodes=3,int num_edges=14,int l=200);
+
+    void generate_random_connectivity_graph(Graph &graph,int num_nodes,int num_edges,std::vector<VertexLabel> &labels);
 
     void generate_connect_graphs_by_Dgraph(Graph &dgraph, Graph &qgraph,const  int num_nodes);
 

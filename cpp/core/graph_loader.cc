@@ -138,8 +138,8 @@ void GraphLoader::LoadGraph(Graph &graph, const std::vector<Vertex> &vertices, c
   graph.vertex_index_map_ = boost::get(boost::vertex_index, *graph.graph_);
   graph.edge_data_map_ = std::unique_ptr<EdgeDataMap>(
           new EdgeDataMap(boost::get(boost::edge_weight, *graph.graph_)));
-  graph.num_vertices_ = num_vertices_;
-  graph.num_edges_ = num_edges_;
+  graph.num_vertices_ = vertices.size();
+  graph.num_edges_ = edges.size();
   LOG(INFO) << "loading graph finished." << std::endl;
 }
 
@@ -175,8 +175,8 @@ void GraphLoader::LoadGraph(Graph &graph,const std::vector<Vertex> &vertices, co
   graph.vertex_index_map_ = boost::get(boost::vertex_index, *graph.graph_);
   graph.edge_data_map_ = std::unique_ptr<EdgeDataMap>(
           new EdgeDataMap(boost::get(boost::edge_weight, *graph.graph_)));
-  graph.num_vertices_ = num_vertices_;
-  graph.num_edges_ = num_edges_;
+  graph.num_vertices_ = vertices.size();
+  graph.num_edges_ = edges.size();
   LOG(INFO) << "loading graph finished." << std::endl;
 
 

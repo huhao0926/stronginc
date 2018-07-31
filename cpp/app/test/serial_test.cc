@@ -90,6 +90,44 @@ public:
       }
   }
 
+  void test_print_graph_label_set(){
+      Graph dgraph;
+      GraphLoader dgraph_loader;
+      dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
+      std::cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<std::endl;
+      std::unordered_set<VertexLabel> label_set;
+      for(auto u :dgraph.GetAllVerticesID()){
+           label_set.insert(dgraph.GetVertexLabel(u));
+      }
+      for(int i=0;i<label_set.size();++i){
+          if(label_set.find(i)==label_set.end()){
+             cout<<i<<endl;
+          }
+      }
+      cout<<label_set.size()<<endl;
+  }
+
+  void test_generate_random_connect_graph(int num_nodes,int num_edges,int labels,int generate_query_nums){
+      Generate generate;
+      int i=1;
+      while(i<=generate_query_nums){
+           Graph qgraph;
+           generate.generate_random_connectivity_graph(qgraph,num_nodes,num_edges,labels);
+           std::unordered_set<VertexID> node_set;
+           qgraph.find_connectivity_nodes(0,node_set);
+           cout<<qgraph.GetNumVertices()<<' '<<qgraph.GetNumEdges()<<' '<<(node_set.size()==num_nodes)<<endl;
+           /*
+           for(auto u:qgraph.GetAllVerticesID()){
+               cout<<u<<' '<<qgraph.GetVertexLabel(u)<<endl;
+           }
+           for(auto e:qgraph.GetAllEdges()){
+               cout<<e.src()<<' '<<e.dst()<<' '<<e.attr()<<endl;
+           }
+           */
+           i++;
+      }
+  }
+
     void generate_random_dgraph(int num_nodes=2000,double a = 1.20,int l = 10){
         Graph dgraph;
         Generate generate;
@@ -395,15 +433,16 @@ int main(int argc, char *argv[]) {
   google::InitGoogleLogging("test for working");
   google::ShutdownGoogleLogging();
 //  init_workers();
-  Serial serial("paint",1);
+  Serial serial("dbpedia",1);
+  serial.test_generate_random_connect_graph(5,10,5,10);
   //serial.generate_random_dgraph(100,1.20,5);
   //serial.generate_query(200,5,40);
 //  serial.test_dualsimulation();
 //  serial.test_dual_incremental();
 //  serial.test_strongsimulation();
 //  serial.test_add_edges();
-    serial.generate_query_view(3);
-    serial.test_view_query();
+    //serial.generate_query_view(3);
+    //serial.test_view_query();
 //  worker_finalize();
   return 0;
 }

@@ -15,6 +15,100 @@ Generate::Generate(std::string graph_vf,std::string graph_ef,std::string graph_r
 
 Generate::~Generate(){}
 
+std::vector<VertexLabel> Generate::get_graph_label_vec(Graph &graph){
+      std::unordered_set<VertexLabel> label_set;
+      for(auto u :graph.GetAllVerticesID()){
+           label_set.insert(graph.GetVertexLabel(u));
+      }
+      std::vector<VertexLabel> label_vec;
+      for(auto label:label_set){
+          label_vec.push_back(label);
+      }
+      return label_vec;
+    }
+
+void Generate::generate_random_connectivity_graph(Graph &graph,int num_nodes,int num_edges,std::vector<VertexLabel> &labels){
+    std::vector<Vertex> vertices;
+    std::vector<Edge> edges;
+    std::set<std::pair<VertexID,VertexID>> exist_edges;
+    int i = 0;
+    std::unordered_set<VertexID> connectivity_nodes;
+    while(i<num_edges){
+        int n1 = random(0,num_nodes-1);
+        int n2 = random(0,num_nodes-1);
+        if(n1==n2 ||exist_edges.find(std::pair<VertexID,VertexID>(n1,n2)) != exist_edges.end()){
+            continue;
+        }
+        if(connectivity_nodes.size()==0){
+            connectivity_nodes.insert(n1);
+            connectivity_nodes.insert(n2);
+            edges.emplace_back(n1,n2,1);
+            exist_edges.insert(std::make_pair(n1,n2));
+            ++i;
+        }else if(connectivity_nodes.size()>0 && connectivity_nodes.size()<num_nodes){
+            if((connectivity_nodes.find(n1)!=connectivity_nodes.end() && connectivity_nodes.find(n2)==connectivity_nodes.end()) || (connectivity_nodes.find(n2)!=connectivity_nodes.end() && connectivity_nodes.find(n1)==connectivity_nodes.end())){
+                connectivity_nodes.insert(n1);
+                connectivity_nodes.insert(n2);
+                edges.emplace_back(n1,n2,1);
+                exist_edges.insert(std::make_pair(n1,n2));
+                ++i;
+            }
+        }else{
+            edges.emplace_back(n1,n2,1);
+            exist_edges.insert(std::make_pair(n1,n2));
+            ++i;
+        }
+    }
+    int labels_len = labels.size();
+    for(int j=0;j<num_nodes;j++){
+        int label_index= random(0,labels_len-1);
+        vertices.emplace_back(j,labels[label_index]);
+    }
+    GraphLoader graph_loader;
+    graph_loader.LoadGraph(graph,vertices,edges);
+
+}
+
+void Generate::generate_random_connectivity_graph(Graph &graph,int num_nodes,int num_edges,int l){
+    std::vector<Vertex> vertices;
+    std::vector<Edge> edges;
+    std::set<std::pair<VertexID,VertexID>> exist_edges;
+    int i = 0;
+    std::unordered_set<VertexID> connectivity_nodes;
+    while(i<num_edges){
+        int n1 = random(0,num_nodes-1);
+        int n2 = random(0,num_nodes-1);
+        if(n1==n2 ||exist_edges.find(std::pair<VertexID,VertexID>(n1,n2)) != exist_edges.end()){
+            continue;
+        }
+        if(connectivity_nodes.size()==0){
+            connectivity_nodes.insert(n1);
+            connectivity_nodes.insert(n2);
+            edges.emplace_back(n1,n2,1);
+            exist_edges.insert(std::make_pair(n1,n2));
+            ++i;
+        }else if(connectivity_nodes.size()>0 && connectivity_nodes.size()<num_nodes){
+            if((connectivity_nodes.find(n1)!=connectivity_nodes.end() && connectivity_nodes.find(n2)==connectivity_nodes.end()) || (connectivity_nodes.find(n2)!=connectivity_nodes.end() && connectivity_nodes.find(n1)==connectivity_nodes.end())){
+                connectivity_nodes.insert(n1);
+                connectivity_nodes.insert(n2);
+                edges.emplace_back(n1,n2,1);
+                exist_edges.insert(std::make_pair(n1,n2));
+                ++i;
+            }
+        }else{
+            edges.emplace_back(n1,n2,1);
+            exist_edges.insert(std::make_pair(n1,n2));
+            ++i;
+        }
+    }
+    for(int j=0;j<num_nodes;j++){
+        int label= random(0,l);
+        vertices.emplace_back(j,label);
+    }
+    GraphLoader graph_loader;
+    graph_loader.LoadGraph(graph,vertices,edges);
+}
+
 void Generate::generate_random_dgraph(Graph &graph,int num_nodes,double a,int l){
     std::vector<Vertex> vertices;
     std::vector<Edge> edges;
@@ -27,6 +121,7 @@ void Generate::generate_random_dgraph(Graph &graph,int num_nodes,double a,int l)
         int n2 = random(0,num_nodes-1);
         if(n1!=n2 && exist_edges.find(std::pair<VertexID,VertexID>(n1,n2)) == exist_edges.end()){
             edges.emplace_back(n1,n2,1);
+            exist_edges.insert(std::make_pair(n1,n2));
             ++i;
         }
     }
