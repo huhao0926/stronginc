@@ -303,12 +303,12 @@ public:
 //            vie.traverse_ViewGraph();
             index+=1;
         }
- }
+}
 
     void generate_query_view(int generate_view_nodes){
         int index = 1;
         Generate generate;
-        while(index<200){
+        while(index<=200){
             Graph qgraph;
             View vie;
             GraphLoader qgraph_loader;
@@ -325,12 +325,13 @@ public:
                 generate.generate_connect_graphs_by_Dgraph(qgraph,*new_view,generate_view_nodes);
                 vie.add_ViewGraph(new_view);
             }
+
             bool is_contain = vie.containCheck(qgraph);
             if(is_contain){
                 std::vector<int> result=vie.minContain(qgraph);
-                if(result.size()==3){
-                    continue;
-                }
+//                if(result.size()==3){
+//                    continue;
+//                }
                 cout<<index<<' '<<"minicontain nums ";
                 for(auto num:result){
                    std::cout<<num<<' ';
@@ -347,73 +348,132 @@ public:
 
     vector<float> compare_direct_and_view_strongresult(Graph &qgraph, std::vector<StrongR> &direct_strong_result,std::vector<StrongR> &view_strong_result){
         vector<float> result;
-        if(direct_strong_result.size()!=view_strong_result.size()){
-            cout<<"size not the same "<<direct_strong_result.size()<<' '<<view_strong_result.size()<<endl;
-            return result;
-        }
+//        if(direct_strong_result.size()!=view_strong_result.size()){
+//            cout<<"size not the same "<<direct_strong_result.size()<<' '<<view_strong_result.size()<<endl;
+//            return result;
+//        }
+//        for(int i=0;i<direct_strong_result.size();++i){
+//            if(direct_strong_result[i].center() != view_strong_result[i].center()){
+//                std::cerr<<"have different center result"<<endl;
+//                return result;
+//            }
+//        }
         for(int i=0;i<direct_strong_result.size();++i){
-            if(direct_strong_result[i].center() != view_strong_result[i].center()){
-                cout<<"have different center result"<<endl;
-                return result;
+            bool find=false;
+            for(int j=0;j<view_strong_result.size();++j){
+                if(direct_strong_result[i].center() == view_strong_result[j].center()){
+                   std::unordered_map<VertexID, std::unordered_set<VertexID>> dirctsim=direct_strong_result[i].ballr();
+                   std::unordered_map<VertexID, std::unordered_set<VertexID>> viewsim=view_strong_result[j].ballr();
+                   if(dual_the_same(qgraph,dirctsim,viewsim)){
+                      result.push_back(1.0);
+                   }else{
+                       std::unordered_set<VertexID> direct_result_node;
+                       std::unordered_set<VertexID> view_result_node;
+                       for(auto u:qgraph.GetAllVerticesID()){
+                          for(auto v:dirctsim[u]){
+                             direct_result_node.insert(v);
+                          }
+                          for(auto v:viewsim[u]){
+                              view_result_node.insert(v);
+                           }
+                       }
+                       result.push_back(float(view_result_node.size()*1.0/direct_result_node.size()));
+                }
+                find=true;
+                break;
             }
+        }
+        if(!find){
+            //result.push_back(0.0);
         }
 
-        for(int i=0;i<direct_strong_result.size();++i){
-            std::unordered_map<VertexID, std::unordered_set<VertexID>> dirctsim=direct_strong_result[i].ballr();
-            std::unordered_map<VertexID, std::unordered_set<VertexID>> viewsim=view_strong_result[i].ballr();
-            if(dual_the_same(qgraph,dirctsim,viewsim)){
-                result.push_back(1.0);
-            }else{
-            std::unordered_set<VertexID> direct_result_node;
-            std::unordered_set<VertexID> view_result_node;
-            for(auto u:qgraph.GetAllVerticesID()){
-                for(auto v:dirctsim[u]){
-                    direct_result_node.insert(v);
-                }
-                for(auto v:viewsim[u]){
-                    view_result_node.insert(v);
-                }
-            }
-            if(diff(view_result_node,direct_result_node).size()>0){
-               cout<<"error : view result > direct result"<<endl;
-               return result;
-            }else{
-                //cout<<"view node is subset of direct node "<<direct_result_node.size()<<' '<<view_result_node.size()<<endl;
-                result.push_back(float(view_result_node.size()*1.0/direct_result_node.size()));
-            }
-            }
         }
         return result;
     }
 
-    void test_view_query(){
-        int index =1;
+    void test_view_query_one(){
         Graph dgraph;
         GraphLoader dgraph_loader,qgraph_loader;
         dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
-       // cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<endl;
-        while(index<200){
-            Graph qgraph;
-            qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
-            View vie;
-            for(int i=1;i<6;++i){
+        cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<endl;
+        int index=query_index;
+        Graph qgraph;
+        qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
+        View vie;
+        for(int i=1;i<6;++i){
                 GraphLoader view_loader;
                 Graph* new_view = new Graph();
                 view_loader.LoadGraph(*new_view,get_view_vfile(index,i),get_view_efile(index,i));
                 vie.add_ViewGraph(new_view);
-            }
-            std::vector<StrongR> view_strong_result = vie.queryByViews(dgraph,qgraph);
-            StrongSim strongs;
-            vector<StrongR> direct_strong_result= strongs.strong_simulation_sim(dgraph,qgraph);
-
-           //cout<<view_strong_result.size()<<' '<<direct_strong_result.size()<<endl;
-           vector<float> compare_rate = compare_direct_and_view_strongresult(qgraph,direct_strong_result,view_strong_result);
-           for(auto f:compare_rate){
-               cout<<index<<' '<<f<<endl;
-            }
-            index+=1;
         }
+        clock_t view_stime=clock();
+        std::vector<StrongR> view_strong_result = vie.queryByViews(dgraph,qgraph,0);
+        clock_t view_etime=clock();
+        std::cout<<"calculate view strong"<<(float)(view_etime-view_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
+
+        StrongSim strongs;
+        clock_t direct_stime=clock();
+//        vector<StrongR> direct_strong_result;
+        vector<StrongR> direct_strong_result= strongs.strong_simulation_sim(dgraph,qgraph);
+        clock_t direct_etime=clock();
+        std::cout<<"calculate direct strong"<<(float)(direct_etime-direct_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
+        cout<<view_strong_result.size()<<' '<<direct_strong_result.size()<<endl;
+        vector<float> compare_rate = compare_direct_and_view_strongresult(qgraph,direct_strong_result,view_strong_result);
+        int same_count=0;
+        int appoximate_count=0;
+        for(auto f:compare_rate){
+               if(f==1){
+                   same_count+=1;
+               }else{
+                   appoximate_count+=1;
+               }
+       }
+       cout<<"same_count: "<<same_count<<" appoxiamte_count : "<<appoximate_count<<endl;
     }
+    void test_view_query_all(int circle_num){
+        Graph dgraph;
+        GraphLoader dgraph_loader,qgraph_loader;
+        dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
+        cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<endl;
+        int index=2;
+        while(index<=circle_num){
+        Graph qgraph;
+        qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
+        View vie;
+        for(int i=1;i<6;++i){
+                GraphLoader view_loader;
+                Graph* new_view = new Graph();
+                view_loader.LoadGraph(*new_view,get_view_vfile(index,i),get_view_efile(index,i));
+                vie.add_ViewGraph(new_view);
+        }
+        clock_t view_stime=clock();
+        std::vector<StrongR> view_strong_result = vie.queryByViews(dgraph,qgraph,0);//0 means answer using cache dual_simulation ,1 means answer using cache strong simulaton
+        clock_t view_etime=clock();
+        std::cerr<<"calculate view strong"<<(float)(view_etime-view_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
+
+        StrongSim strongs;
+        clock_t direct_stime=clock();
+//        vector<StrongR> direct_strong_result;
+        vector<StrongR> direct_strong_result= strongs.strong_simulation_sim(dgraph,qgraph);
+        clock_t direct_etime=clock();
+        std::cerr<<"calculate direct strong"<<(float)(direct_etime-direct_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
+       // cout<<view_strong_result.size()<<' '<<direct_strong_result.size()<<endl;
+        vector<float> compare_rate = compare_direct_and_view_strongresult(qgraph,direct_strong_result,view_strong_result);
+        int same_count=0;
+        int appoximate_count=0;
+        int center_none_result=direct_strong_result.size()-view_strong_result.size();
+        for(auto f:compare_rate){
+               if(f==1){
+                   same_count+=1;
+               }else{
+                   appoximate_count+=1;
+               }
+       }
+       cout<<index<<" same_count: "<<same_count<<" appoxiamte_count : "<<appoximate_count<<" none result count: "<<center_none_result<<" accuracy rate : "<<(float)same_count*1.0/(same_count+appoximate_count+center_none_result)<<endl;
+       index+=1;
+       }
+    }
+
 private:
     int query_index = 1;
     std::string test_data_name ="yago";
@@ -433,15 +493,19 @@ int main(int argc, char *argv[]) {
   google::InitGoogleLogging("test for working");
   google::ShutdownGoogleLogging();
 //  init_workers();
-  Serial serial("dbpedia",1);
-  serial.test_generate_random_connect_graph(5,10,5,10);
+//  Serial serial("dbpedia",1);
+  Serial serial("yago",3);
+//  serial.test_generate_random_connect_graph(5,10,5,10);
   //serial.generate_random_dgraph(100,1.20,5);
   //serial.generate_query(200,5,40);
 //  serial.test_dualsimulation();
 //  serial.test_dual_incremental();
 //  serial.test_strongsimulation();
 //  serial.test_add_edges();
-    //serial.generate_query_view(3);
+
+//    serial.generate_query_view(3);
+//    serial.test_view_query_one();
+    serial.test_view_query_all(20);
     //serial.test_view_query();
 //  worker_finalize();
   return 0;

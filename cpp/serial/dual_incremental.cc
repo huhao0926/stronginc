@@ -65,7 +65,7 @@
     }
 
 
-  void DualInc::update_pre_dec_counter(GraphView &graph_view,Graph &qgraph,VertexID u,VertexID v,
+  void DualInc::update_pre_dec_counter(Ball_View &graph_view,Graph &qgraph,VertexID u,VertexID v,
                           std::unordered_map<VertexID, std::vector<int>> &sim_counter_pre,
                           std::unordered_map<VertexID, std::vector<int>> &sim_counter_post){
         for(auto vp : graph_view.GetParentsID(v)){
@@ -84,7 +84,7 @@
         }
    }
 
-  void DualInc::propagate_remove(GraphView &graph_view,Graph &qgraph,
+  void DualInc::propagate_remove(Ball_View &graph_view,Graph &qgraph,
                           std::unordered_map<VertexID, std::unordered_set<VertexID>> &aff_node,
                           std::set<std::pair<VertexID,VertexID>> &filter_set,
                           std::unordered_map<VertexID, std::vector<int>> &sim_counter_pre,
@@ -153,7 +153,14 @@
                 view_nodes.insert(v);
             }
         }
-        GraphView graph_view(dgraph,&view_nodes);
+        std::unordered_set<Edge> view_edges;
+        for(auto e:dgraph.GetAllEdges()){
+            if(view_nodes.find(e.src())!=view_nodes.end() && view_nodes.find(e.dst())!=view_nodes.end()){
+                view_edges.insert(e);
+            }
+        }
+        Ball_View graph_view(view_nodes,view_edges);
+//        GraphView graph_view(dgraph,&view_nodes);
         std::unordered_map<VertexID, std::vector<int>> sim_counter_post,sim_counter_pre;
         for (auto w : view_nodes){
             sim_counter_post[w] = std::vector<int>(qgraph.GetNumVertices(), 0);
@@ -272,7 +279,14 @@
                 view_nodes.insert(v);
             }
         }
-        GraphView graph_view(dgraph,&view_nodes);
+        std::unordered_set<Edge> view_edges;
+        for(auto e:dgraph.GetAllEdges()){
+            if(view_nodes.find(e.src())!=view_nodes.end() && view_nodes.find(e.dst())!=view_nodes.end()){
+                view_edges.insert(e);
+            }
+        }
+        Ball_View graph_view(view_nodes,view_edges);
+//        GraphView graph_view(dgraph,&view_nodes);
         std::unordered_map<VertexID, std::vector<int>> sim_counter_post,sim_counter_pre;
         for (auto w : view_nodes){
             sim_counter_post[w] = std::vector<int>(qgraph.GetNumVertices(), 0);

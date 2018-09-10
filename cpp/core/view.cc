@@ -2,7 +2,11 @@
 
 View::View(){}
 
-View::~View(){}
+View::~View(){
+    for(int i=0;i<ViewGraph_list.size();i++){
+        delete ViewGraph_list[i];
+    }
+}
 
 void View::add_ViewGraph(Graph* view){
     ViewGraph_list.push_back(view);
@@ -137,43 +141,61 @@ std::vector<int> View::minContain(Graph &qgraph){
     return ans;
 }
 
-std::vector<StrongR>  View::queryByViews(Graph &dgraph,Graph &qgraph){
-    vector<StrongR> max_result;
-    /*
-    int index=1;
-    for(int i=1;i<6;++i){
-        GraphLoader view_loader;
-        Graph* new_view = new Graph();
-        view_loader.LoadGraph(*new_view,"../data/contain1/data"+std::to_string(index)+"/view"+std::to_string(i)+".v","../data/contain1/data"+std::to_string(index)+"/view"+std::to_string(i)+".e");
-        add_ViewGraph(new_view);
-    }*/
-    bool is_contain = containCheck(qgraph);
-  //  cout<<is_contain<<endl;
-    if(!is_contain){
-        return max_result;
-    }
-    std::vector<int> min_contain_vec = minContain(qgraph);
-   // for(auto n:min_contain_vec){
-  //      cout<<n<<endl;
-  //  }
-    std::unordered_map<VertexID, std::unordered_set<VertexID>> max_query_sim;
-    std::unordered_set<VertexID> view_nodes;
-    std::unordered_set<Edge> view_edges;
-    for(auto u :qgraph.GetAllVerticesID()){
-        max_query_sim[u] = std::unordered_set<VertexID>();
-    }
+std::unordered_map<int,std::vector<StrongR>> View::cache_by_strong(Graph &dgraph,std::vector<int> &min_contain_vec){
+    std::unordered_map<int,std::vector<StrongR>> result;
     StrongSim strongs;
     for(auto num:min_contain_vec){
         vector<StrongR> res= strongs.strong_simulation_sim(dgraph,*ViewGraph_list[num]);
+        result[num]=res;
+    }
+    return result;
+}
+
+
+std::unordered_map<int,std::unordered_map<int,std::unordered_set<VertexID>>> View::cache_by_dual(Graph &dgraph,std::vector<int> &min_contain_vec){
+    std::unordered_map<int,std::unordered_map<int,std::unordered_set<VertexID>>> result;
+    for(auto num:min_contain_vec){
+        DualSim dualsim;
+        std::unordered_map<VertexID, std::unordered_set<VertexID>>  sim;
+        bool initialized_sim = false;
+        dualsim.dual_simulation(dgraph,*ViewGraph_list[num],sim,initialized_sim);
+        result[num]=sim;
+    }
+    return result;
+}
+
+void View::deal_dual_cache(Graph &qgraph,std::vector<int> &min_contain_vec,std::unordered_map<int,std::unordered_map<int,std::unordered_set<VertexID>>> &result,std::unordered_map<VertexID, std::unordered_set<VertexID>> &max_query_sim, std::unordered_set<VertexID> &view_nodes){
+    for(auto num:min_contain_vec){
         DualSim dualsim;
         std::unordered_map<VertexID, std::unordered_set<VertexID>>  sim;
         bool initialized_sim = false;
         dualsim.dual_simulation(qgraph,*ViewGraph_list[num],sim,initialized_sim);
         //print_sim_vertex_result(*ViewGraph_list[num],sim);
         //cout<<res.size()<<endl;
+        for(auto u:(*ViewGraph_list[num]).GetAllVerticesID()){
+                for(auto v :result[num][u]){
+                    for(auto q_node:sim[u]){
+                        max_query_sim[q_node].insert(v);
+                        view_nodes.insert(v);
+                    }
+                }
+        }
+//        cout<<"view nodes size: "<<view_nodes.size()<<endl;
+    }
+}
 
-        for(int i=0;i<res.size();++i){
-            std::unordered_map<VertexID, std::unordered_set<VertexID>> ball_sim=res[i].ballr();
+void View::deal_strong_cache(Graph &qgraph,std::vector<int> &min_contain_vec,std::unordered_map<int,std::vector<StrongR>> &result,std::unordered_map<VertexID, std::unordered_set<VertexID>> &max_query_sim, std::unordered_set<VertexID> &view_nodes){
+    for(auto num:min_contain_vec){
+//        vector<StrongR> res= strongs.strong_simulation_sim(dgraph,*ViewGraph_list[num]);
+//        result[num]=res;
+        DualSim dualsim;
+        std::unordered_map<VertexID, std::unordered_set<VertexID>>  sim;
+        bool initialized_sim = false;
+        dualsim.dual_simulation(qgraph,*ViewGraph_list[num],sim,initialized_sim);
+//        print_sim_vertex_result(*ViewGraph_list[num],sim);
+
+        for(int i=0;i<result[num].size();++i){
+            std::unordered_map<VertexID, std::unordered_set<VertexID>> ball_sim=result[num][i].ballr();
             for(auto u:(*ViewGraph_list[num]).GetAllVerticesID()){
                 for(auto v :ball_sim[u]){
                     for(auto q_node:sim[u]){
@@ -184,8 +206,89 @@ std::vector<StrongR>  View::queryByViews(Graph &dgraph,Graph &qgraph){
             }
         }
     }
-    //cout<<"dd1"<<endl;
+}
+
+
+void View::cache_node_distance(Graph &dgraph,std::unordered_set<VertexID> &ball_node,std::unordered_map<VertexID,std::unordered_map<VertexID,int>> &dis_ball){
+    int dgraph_num_vertices=dgraph.GetNumVertices();
+    for(auto &vid:ball_node){
+        std::vector<int> dis(dgraph_num_vertices,INT_MAX);
+        std::vector<int> color(dgraph_num_vertices,0);
+        std::queue<VertexID> q;
+        q.push(vid);
+        dis[vid]=0;
+        color[vid]=1;
+        while(!q.empty()){
+            VertexID root = q.front();
+            q.pop();
+            for(auto v:dgraph.GetChildrenID(root)){
+               if(color[v]==0){
+                   q.push(v);
+                   color[v]=1;
+                   dis[v]=dis[root]+1;
+               }
+            }
+            for (auto v: dgraph.GetParentsID(root)){
+                if(color[v]==0){
+                    q.push(v);
+                    color[v]=1;
+                    dis[v]=dis[root]+1;
+                }
+            }
+        }
+        std::unordered_map<VertexID,int> cache_dis;
+        for(auto &v:ball_node){
+            cache_dis[v]=dis[v];
+        }
+        dis_ball[vid]=cache_dis;
+    }
+}
+
+std::vector<StrongR>  View::queryByViews(Graph &dgraph,Graph &qgraph,const int flag){
+    vector<StrongR> max_result;
+    bool is_contain = containCheck(qgraph);
+  //  cout<<is_contain<<endl;
+    if(!is_contain){
+        return max_result;
+    }
+    std::vector<int> min_contain_vec = minContain(qgraph);
+//   for(auto n:min_contain_vec){
+//        cout<<n<<endl;
+//    }
+    std::unordered_map<VertexID, std::unordered_set<VertexID>> max_query_sim;
+    std::unordered_set<VertexID> view_nodes;
+    std::unordered_set<Edge> view_edges;
+    for(auto u :qgraph.GetAllVerticesID()){
+        max_query_sim[u] = std::unordered_set<VertexID>();
+    }
+
+//    cout<<"dd1"<<endl;
     //return max_result;
+    /*cache by dual result*/
+    if(flag==0){
+        clock_t cache_stime=clock();
+        std::unordered_map<int,std::unordered_map<int,std::unordered_set<VertexID>>> cache_result=cache_by_dual(dgraph,min_contain_vec);
+        clock_t cache_etime=clock();
+        std::cerr<<"should be delete time by dual cache"<<(float)(cache_etime-cache_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
+
+
+        deal_dual_cache(qgraph,min_contain_vec,cache_result,max_query_sim,view_nodes);
+    }else{
+        clock_t cache_stime=clock();
+        std::unordered_map<int,std::vector<StrongR>> cache_result=cache_by_strong(dgraph,min_contain_vec);
+        clock_t cache_etime=clock();
+        std::cerr<<"should be delete time by strong cache"<<(float)(cache_etime-cache_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
+
+        deal_strong_cache(qgraph,min_contain_vec,cache_result,max_query_sim,view_nodes);
+    }
+
+
+/*
+    cache by strong result
+   */
+
+
+
     for(auto e:qgraph.GetAllEdges()){
         std::unordered_set<Edge> eSet;
         VertexID source = e.src();
@@ -201,7 +304,7 @@ std::vector<StrongR>  View::queryByViews(Graph &dgraph,Graph &qgraph){
         }
     }
     Ball_View graph_view(view_nodes,view_edges);
-  //  cout<<graph_view.GetNumVertices()<<' '<<graph_view.GetNumEdges()<<endl;
+    cout<<graph_view.GetNumVertices()<<' '<<graph_view.GetNumEdges()<<endl;
     //return max_result;
     int d_Q = cal_diameter_qgraph(qgraph);
     dual_filter_match(graph_view,qgraph,max_query_sim);

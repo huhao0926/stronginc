@@ -332,3 +332,124 @@ std::vector<StrongR> StrongSim::strong_simulation_sim(Graph &dgraph, Graph &qgra
          // std::cout<<"all strong "<< (float)(etime-stime)/CLOCKS_PER_SEC<<std::endl;
           return max_result;
       }
+
+ void  StrongSim::cal_culculate_directed_dhop_nodes(Graph& dgraph,VertexID vid, int d_hop,std::unordered_set<VertexID> &result,std::vector<int>& dis){
+    int dgraph_num_vertices=dgraph.GetNumVertices();
+    std::vector<int> color(dgraph_num_vertices,0);
+    //std::vector<int> dis;
+    dis.resize(dgraph_num_vertices,INT_MAX);
+    std::queue<VertexID> q;
+    q.push(vid);
+    dis[vid]=0;
+    color[vid]=1;
+    result.insert(vid);
+    while(!q.empty()){
+         VertexID root = q.front();
+         q.pop();
+         if(dis[root]==d_hop){
+            return ;
+         }
+         for(auto v:dgraph.GetChildrenID(root)){
+             if(color[v]==0){
+                 q.push(v);
+                 color[v]=1;
+                 dis[v]=dis[root]+1;
+                 result.insert(v);
+             }
+         }
+         for (auto v: dgraph.GetParentsID(root)){
+             if(color[v]==0){
+                 q.push(v);
+                 color[v]=1;
+                 dis[v]=dis[root]+1;
+                 result.insert(v);
+             }
+         }
+    }
+
+ }
+
+    std::vector<StrongR> StrongSim::strong_simulation_sim_ball_dhop_info(Graph &dgraph, Graph &qgraph,std::unordered_map<VertexID, std::unordered_set<VertexID>> &ball_dhop_info,std::unordered_map<VertexID,std::vector<int>> &ball_dis_info){
+          /**
+           *calculate qgaraph diameter
+          */
+          std::vector<StrongR> max_result;
+          int d_Q = cal_diameter_qgraph(qgraph);
+          std::unordered_map<VertexID, std::unordered_set<VertexID>> global_sim;
+          /**
+           *calculate dual simulation for dgraph
+           */
+          DualSim dualsim;
+          bool inital_sim =false;
+          dualsim.dual_simulation(dgraph,qgraph,global_sim,inital_sim);
+//          std::cout<<"dual "<<(float)(end1-start1)/CLOCKS_PER_SEC<<std::endl;
+          int i=0;
+          clock_t stime,etime;
+          stime =clock();
+          for (auto w : dgraph.GetAllVerticesID()) {
+              /**
+               * calculate ball for center w if w if a valid center
+               */
+              if (valid_sim_w(qgraph,global_sim,w)){
+               clock_t start,end;
+               start =clock();
+              /**
+               *find d_hop_nodes for w in dgraph
+               */
+               std::vector<int> dis;
+              std::unordered_set<VertexID> ball_node;
+              //dgraph.find_hop_nodes(w,d_Q,ball_node);
+              cal_culculate_directed_dhop_nodes(dgraph,w,d_Q,ball_node,dis);
+              std::unordered_set<VertexID> ball_filter_node;
+              std::unordered_set<Edge> ball_filter_edge;
+              std::unordered_map<VertexID, std::unordered_set<VertexID>> S_w;
+              for(auto u : qgraph.GetAllVerticesID()){
+                  for (auto v : global_sim[u]){
+                      if(ball_node.find(v) != ball_node.end()){
+                          S_w[u].insert(v);
+                          ball_filter_node.insert(v);
+                      }
+                  }
+              }
+              ball_dhop_info[w]=ball_filter_node;
+              ball_dis_info[w]=dis;
+
+
+              for(auto e: qgraph.GetAllEdges()){
+                  VertexID sourceid=e.src();
+                  VertexID targetid=e.dst();
+                  for (auto sim_v1 : S_w[sourceid]){
+                      for(auto sim_v2 : S_w[targetid]){
+                          if (dgraph.ExistEdge(sim_v1,sim_v2)){
+                              ball_filter_edge.insert(Edge(sim_v1,sim_v2,1));
+                          }
+                      }
+                  }
+              }
+
+              Ball_View ball_view(ball_filter_node,ball_filter_edge);
+
+              std::unordered_set<VertexID> refined_ball_vertex;
+              std::unordered_set<Edge> refinded_ball_edge;
+              find_node_connectivity_nodes(ball_view,refined_ball_vertex,w);
+              for(auto e :ball_filter_edge){
+                   if(refined_ball_vertex.find(e.src()) != refined_ball_vertex.end() && refined_ball_vertex.find(e.dst())!=refined_ball_vertex.end()){
+                       refinded_ball_edge.insert(e);
+                   }
+              }
+              Ball_View refined_ball_view(refined_ball_vertex,refinded_ball_edge);
+              rename_sim(refined_ball_view,qgraph,S_w);
+              dual_filter_match(refined_ball_view, qgraph,S_w,w,d_Q);
+
+              extract_max_pg(refined_ball_view,dgraph,qgraph, w,S_w);
+
+              max_result.emplace_back(w,S_w);
+              //print_ball_info(qgraph,S_w,w);
+            // break;
+             // std::cout<<"calculate one ball time "<<(float)(end-start)/CLOCKS_PER_SEC<<"s"<<std::endl;
+              }
+          }
+          etime=clock();
+         // std::cout<<"all strong "<< (float)(etime-stime)/CLOCKS_PER_SEC<<std::endl;
+          return max_result;
+    }

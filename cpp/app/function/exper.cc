@@ -29,7 +29,7 @@ public:
         this->graph_vfile ="../data/"+test_data_name+"/"+test_data_name+".v";
         this->graph_efile ="../data/"+test_data_name+"/"+test_data_name+".e";
         this->r_file = "../data/"+test_data_name+"/"+test_data_name+".r";
-        this->base_qfile = "../data/"+test_data_name+"/query/q";
+        this->base_qfile = "../data/"+test_data_name+"/query1/q";
         this->base_add_file = "../data/"+test_data_name+"/inc/add_e";
         this->base_remove_file="../data/"+test_data_name+"/inc/rm_e";
         this->base_add_affected_center_file ="../data/"+test_data_name+"/inc/affectedcenter_adde.txt";
@@ -44,7 +44,17 @@ public:
         return base_qfile+std::to_string(index)+".e";
     }
 public:
-  void generate_query_base_dgraph(int generate_query_nums,int generate_query_nodes, int max_calculate_center_nodes){
+  void print_graph_info(Graph &graph){
+      std::cout<<"dgraph vertices nums: "<<graph.GetNumVertices()<<" dgraph edgee nums: "<<graph.GetNumEdges()<<endl;
+      for(auto u:graph.GetAllVerticesID()){
+          cout<<"id->label:"<<u<<' '<<graph.GetVertexLabel(u)<<endl;
+      }
+      for(auto e:graph.GetAllEdges()){
+          cout<<"edges:"<<e.src()<<' '<<e.dst()<<endl;
+      }
+  }
+
+  void generate_query_base_dgraph(int generate_query_nodes, int max_calculate_center_nodes,int generate_query_nums){
       Graph dgraph;
       Generate generate;
       GraphLoader dgraph_loader;
@@ -95,6 +105,7 @@ public:
           e0 =clock();
           if(max_dual_set.size()<=max_calculate_center_nodes){
               generate.save_grape_file(qgraph,get_query_vfile(i),get_query_efile(i));
+             // print_graph_info(qgraph);
               std::cout<<i<<' '<<"calculate dual time"<<(float)(e0-s0)/CLOCKS_PER_SEC<<"s"<<' '<<max_dual_set.size()<<std::endl;
               i++;
           }
@@ -337,10 +348,6 @@ void test_bunch_remove_edges(int circle_num){
          outfile.close();
           j+=1;
       }
-
-
-
-
 }
 
 void generate_all_random_edges(int num_edges,int circle_num){
@@ -352,7 +359,7 @@ void generate_all_random_edges(int num_edges,int circle_num){
     LoadEdges(exist_edges,graph_efile);
     cout<<"Base Graph vertices: "<<dgraph_num_vertices<<"  Base Graph edges: "<<dgraph.GetNumEdges()<<endl;
     int i=1;
-    while(i<circle_num){
+    while(i<=circle_num){
        // Graph dgraph;
        // load_graph(dgraph,graph_vfile,graph_efile, base_add_file,base_remove_file,exist_edges,i-1);
         std::set<std::pair<VertexID,VertexID>> add_e_set,remove_e_set;
@@ -372,7 +379,6 @@ void generate_all_random_edges(int num_edges,int circle_num){
         i++;
     }
 }
-
 
 std::set<std::pair<VertexID,VertexID>> generate_all_random_add_edges(std::set<std::pair<VertexID,VertexID>> &exist_edges,int dgraph_num_vertices,int num_edges){
    srand( (unsigned)time(0));
@@ -423,7 +429,6 @@ private:
     std::string base_add_affected_center_file ="../data/yago/inc/affectedcenter_adde.txt";
     std::string base_remove_affected_center_file ="../data/yago/inc/affectedcenter_rme.txt";
     int query_index = 1;
-
 };
 
 
@@ -434,9 +439,13 @@ int main(int argc, char *argv[]) {
   google::InitGoogleLogging("test for working");
   google::ShutdownGoogleLogging();
   init_workers();
-  string base_name="yago";
+  string base_name="liveJournal";
   ExperExr experExr(base_name,3);
-  experExr.generate_query_random(5,10,2,10000,0,200);
+  experExr.generate_query_base_dgraph(5,1500,20);
+  //experExr.generate_all_random_edges(100000,10);
+  //experExr.generate_query_random(5,10,2,10000,0,5);
+  // experExr.test_bunch_add_edges(10);
+  // experExr.test_bunch_remove_edges(10);
   worker_finalize();
   return 0;
 }

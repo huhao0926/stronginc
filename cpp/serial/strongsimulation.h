@@ -67,5 +67,9 @@ class StrongSim{
 
      std::vector<StrongR> strong_simulation_sim(Graph &dgraph, Graph &qgraph);
 
+     void  cal_culculate_directed_dhop_nodes(Graph& dgraph,VertexID vid, int d_hop,std::unordered_set<VertexID> &result,std::vector<int>& dis);
+
+     std::vector<StrongR>  strong_simulation_sim_ball_dhop_info(Graph &dgraph, Graph &qgraph,std::unordered_map<VertexID, std::unordered_set<VertexID>> &ball_dhop_info,std::unordered_map<VertexID,std::vector<int>> &ball_dis_info);
+
 };
 #endif //CPP_STRONGSIMULATION_H_

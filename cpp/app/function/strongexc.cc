@@ -437,9 +437,13 @@ std::vector<StrongR> calculate_direct_strong_inc(Graph &dgraph,Graph &qgraph,
                                       std::set<std::pair<VertexID,VertexID>> &add_edges,
                                       std::set<std::pair<VertexID,VertexID>> &rm_edges){
           StrongSim strongsim;
+          clock_t add_edge_time0,add_edge_time1;
+          add_edge_time0=clock();
           for (auto e:add_edges){
              dgraph.AddEdge(Edge(e.first,e.second,1));
           }
+          add_edge_time1=clock();
+         // std::cout<<"strong direct add time: "<<(float)(add_edge_time1-add_edge_time0)/CLOCKS_PER_SEC<<"s"<<std::endl;
          for(auto e :rm_edges){
               dgraph.RemoveEdge(Edge(e.first,e.second,1));
           }
@@ -540,7 +544,7 @@ void generate_all_random_edges(int num_edges,int circle_num){
     LoadEdges(exist_edges,graph_efile);
     cout<<"Base Graph vertices: "<<dgraph_num_vertices<<"  Base Graph edges: "<<dgraph.GetNumEdges()<<endl;
     int i=1;
-    while(i<circle_num){
+    while(i<=circle_num){
        // Graph dgraph;
        // load_graph(dgraph,graph_vfile,graph_efile, base_add_file,base_remove_file,exist_edges,i-1);
         std::set<std::pair<VertexID,VertexID>> add_e_set,remove_e_set;
@@ -599,7 +603,7 @@ std::set<std::pair<VertexID,VertexID>> generate_all_random_remove_edges(std::set
     return remove_e_set;
 }
 
-void print_affected_center_info(int circle_num){
+void print_affected_center_info_bunch(int circle_num){
     Generate generate;
      Graph dgraph,qgraph;
      GraphLoader dgraph_loader,qgraph_loader;
@@ -628,6 +632,44 @@ void print_affected_center_info(int circle_num){
 
 }
 
+void print_affected_center_info_one_by_one(int circle_num){
+    Generate generate;
+     Graph dgraph,qgraph;
+     GraphLoader dgraph_loader,qgraph_loader;
+     dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
+     qgraph_loader.LoadGraph(qgraph,get_query_vfile(query_index),get_query_efile(query_index));
+     std::unordered_set<VertexID> max_dual_set =generate.get_dual_node_result(dgraph,qgraph);
+     int d_Q = cal_diameter_qgraph(qgraph);
+     cout<<"Base Graph vertices: "<<dgraph.GetNumVertices()<<"  Base Graph edges: "<<dgraph.GetNumEdges()<<endl;
+
+     std::set<std::pair<VertexID,VertexID>> add_edges,rm_edges;
+     Load_bunch_edges(add_edges,base_add_file,circle_num);
+     //Load_bunch_edges(rm_edges,base_remove_file,circle_num);
+     std::unordered_set<VertexID> edge_affected_nodes;
+     int j=1;
+     int i=1;
+     for(auto add_e:add_edges){
+         std::set<pair<VertexID,VertexID>> tmp_set;
+         tmp_set.insert(add_e);
+         std::unordered_set<VertexID> e_affected_nodes = find_affected_area(dgraph,tmp_set,d_Q);
+         e_affected_nodes = intersection(e_affected_nodes,max_dual_set);
+         e_affected_nodes = diff(e_affected_nodes,edge_affected_nodes);
+         edge_affected_nodes = unions(e_affected_nodes,edge_affected_nodes);
+         std::cout<<"add "<<j<<' '<<e_affected_nodes.size()<<' '<<edge_affected_nodes.size()<<std::endl;
+         j++;
+     }
+     for(auto rm_e:rm_edges){
+         std::set<pair<VertexID,VertexID>> tmp_set;
+         tmp_set.insert(rm_e);
+         std::unordered_set<VertexID> e_affected_nodes = find_affected_area(dgraph,tmp_set,d_Q);
+         e_affected_nodes = intersection(e_affected_nodes,max_dual_set);
+         e_affected_nodes = diff(e_affected_nodes,edge_affected_nodes);
+         edge_affected_nodes = unions(e_affected_nodes,edge_affected_nodes);
+         std::cout<<"rm "<<i<<' '<<e_affected_nodes.size()<<' '<<edge_affected_nodes.size()<<std::endl;
+         i++;
+     }
+}
+
  void first_strong_strongInc(int circle_num){
   StrongInc stronginc;
   StrongSim strongsim;
@@ -640,30 +682,49 @@ void print_affected_center_info(int circle_num){
   Generate generate;
       Graph qgraph;
       qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
-      std::unordered_map<VertexID, std::unordered_set<VertexID>> sim;
+      int d_Q = cal_diameter_qgraph(qgraph);
+      std::unordered_map<VertexID, std::unordered_set<VertexID>> sim,ball_dhop_info_direct1;
+      std::unordered_map<int,std::vector<int>> ball_dis_info1;
       clock_t s0,e0;
       s0 =clock();
-      std::vector<StrongR> strongsimr = strongsim.strong_simulation_sim(dgraph,qgraph);
+
+      std::vector<StrongR> strongsimr = strongsim.strong_simulation_sim_ball_dhop_info(dgraph,qgraph,ball_dhop_info_direct1,ball_dis_info1);
+//      for(auto &v:ball_dhop_info_direct){
+//          cout<<v.first<<' '<<v.second.size()<<endl;
+//      }
   //    std::vector<StrongR> strongsimr;
       e0 =clock();
       std::cout<<"calculate original strong"<<(float)(e0-s0)/CLOCKS_PER_SEC<<"s"<<std::endl;
       bool initialized_sim=false;
       dualsim.dual_simulation(dgraph,qgraph,sim,initialized_sim);
       std::unordered_set<VertexID> max_dual_set =generate.get_dual_node_result(dgraph,qgraph);
-      std::cout<<"max dual size "<<max_dual_set.size()<<std::endl;
+      cout<<"Base Graph vertices: "<<dgraph.GetNumVertices()<<"  Base Graph edges: "<<dgraph.GetNumEdges()<<" max_dual_set size: "<<max_dual_set.size()<<" d_Q: "<<d_Q<<endl;
       int j=1;
      // std::vector<std::pair<VertexID,VertexID>> affected_center_edges;
      // LoadEdges(affected_center_edges,affecte_center_file);
       std::fstream outfile("runtime.txt",std::ios::out);
       outfile.close();
       while (j<=circle_num){
+          std::unordered_map<VertexID, std::unordered_set<VertexID>> ball_dhop_info_direct;
+          for(auto it:ball_dhop_info_direct1){
+              std::unordered_set<VertexID> tmp_set;
+              for(auto v: it.second){
+                   tmp_set.insert(v);
+              }
+              ball_dhop_info_direct[it.first]=tmp_set;
+          }
+          std::unordered_map<int,std::vector<int>> ball_dis_info;
+          for(auto it:ball_dis_info1){
+              std::vector<int> tmp_vec(it.second.begin(),it.second.end());
+              ball_dis_info[it.first]=tmp_vec;
+          }
           GraphLoader dgraph_loaddir,dgraph_loadinc;
           Graph dgraphdir,dgraphinc;
           dgraph_loaddir.LoadGraph(dgraphdir,graph_vfile,graph_efile);
           dgraph_loadinc.LoadGraph(dgraphinc,graph_vfile,graph_efile);
           std::set<std::pair<VertexID,VertexID>> add_edges,rm_edges;
          Load_bunch_edges(add_edges,base_add_file,j);
-         Load_bunch_edges(rm_edges,base_remove_file,j);
+        // Load_bunch_edges(rm_edges,base_remove_file,j);
          // for(int i=0;i<affected_center_edges.size();i++){
         //      if(i<(affected_center_edges.size()/circle_num+1)*j){
         //          add_edges.insert(affected_center_edges[i]);
@@ -684,18 +745,183 @@ void print_affected_center_info(int circle_num){
           start1 =clock();
           std::vector<StrongR> direct_strong = calculate_direct_strong_inc(dgraphdir,qgraph,add_edges,rm_edges);
           end1 = clock();
-        // std::cout<<"calculate direct strong"<<(float)(end1-start1)/CLOCKS_PER_SEC<<"s"<<std::endl;
+         // std::cout<<"calculate direct strong"<<(float)(end1-start1)/CLOCKS_PER_SEC<<"s"<<std::endl;
           clock_t start2,end2;
           start2 =clock();
-         stronginc.strong_simulation_inc(dgraphinc,qgraph,tmp_sim,tmp_r,add_edges,rm_edges);
+         stronginc.strong_simulation_inc_add(dgraphinc,qgraph,tmp_sim,tmp_r,add_edges,ball_dhop_info_direct,ball_dis_info);
          end2 = clock();
          //std::cout<<"calculate inc strong"<<(float)(end2-start2)/CLOCKS_PER_SEC<<"s"<<std::endl;
-         cout<<(float)(end1-start1)/CLOCKS_PER_SEC<<' '<<(float)(end2-start2)/CLOCKS_PER_SEC<<endl;
+         cout<<j<<' '<<(float)(end1-start1)/CLOCKS_PER_SEC<<' '<<(float)(end2-start2)/CLOCKS_PER_SEC<<endl;
          std::fstream outfile("runtime.txt",std::ios::app);
          outfile<<j<<' '<<(float)(end1-start1)/CLOCKS_PER_SEC<<' '<<(float)(end2-start2)/CLOCKS_PER_SEC<<endl;
          outfile.close();
           j+=1;
       }
+ }
+
+ void find_dgraph_ball_sim(Graph &dgraph,Graph &qgraph,std::unordered_map<VertexID, std::unordered_set<VertexID>> &sim,std::unordered_set<VertexID> &ball_sim,int w,int d_Q){
+          std::unordered_set<VertexID> ball_node;
+          dgraph.find_hop_nodes(w,d_Q,ball_node);
+          for(auto u : qgraph.GetAllVerticesID()){
+                  for (auto v : sim[u]){
+                      if(ball_node.find(v) != ball_node.end()){
+                          ball_sim.insert(v);
+                      }
+                  }
+          }
+ }
+
+
+ void cal_culculate_directed_dhop_nodes(Graph& dgraph,VertexID vid, int d_Q,std::unordered_set<VertexID> &result,std::vector<char>& dis){
+    char d_hop=d_Q+'0';
+    int dgraph_num_vertices=dgraph.GetNumVertices();
+    std::vector<int> color(dgraph_num_vertices,0);
+    //std::vector<int> dis;
+    dis.resize(dgraph_num_vertices,'9');
+    std::queue<VertexID> q;
+    q.push(vid);
+    dis[vid]='0';
+    color[vid]=1;
+    result.insert(vid);
+    while(!q.empty()){
+         VertexID root = q.front();
+         q.pop();
+         if(dis[root]==d_hop){
+            return ;
+         }
+         for(auto v:dgraph.GetChildrenID(root)){
+             if(color[v]==0){
+                 q.push(v);
+                 color[v]=1;
+                 dis[v]=dis[root]+1;
+                 result.insert(v);
+             }
+         }
+         for (auto v: dgraph.GetParentsID(root)){
+             if(color[v]==0){
+                 q.push(v);
+                 color[v]=1;
+                 dis[v]=dis[root]+1;
+                 result.insert(v);
+             }
+         }
+    }
+ }
+
+ void cal_culculate_inc_dhop_nodes_add(Graph& dgraph,int d_hop,std::unordered_set<VertexID> &result,std::vector<char>  &dis,std::set<std::pair<VertexID,VertexID>> &add_edges){
+ //add_edges id <dgraph_num_vertices
+         char d_Q=d_hop+'0';
+         int dgraph_num_vertices=dgraph.GetNumVertices();
+        dis.resize(dgraph_num_vertices,'9');
+         VertexID base_id=0;
+         VertexID inc_id=0;
+         for(auto e:add_edges){
+             if(dis[e.first]>=d_Q && dis[e.second]>=d_Q){
+                 continue;
+             }else if(dis[e.first]-2>=dis[e.second]){
+                 base_id=e.second;
+                 inc_id =e.first;
+             }else if(dis[e.second]-2>=dis[e.first]){
+                 base_id=e.first;
+                 inc_id =e.second;
+             }else{
+                 continue;
+             }
+             std::queue<VertexID> q;
+             dis[inc_id]=dis[base_id]+1;
+//             if(dis[inc_id]<=d_Q){
+                 result.insert(inc_id);
+                 q.push(inc_id);
+//             }
+             while(!q.empty()){
+                     VertexID root=q.front();
+                     q.pop();
+                     if(dis[root]==d_Q){
+                          break ;
+                     }
+                     for(auto v:dgraph.GetChildrenID(root)){
+                        if(dis[v]>dis[root]+1){
+                            q.push(v);
+                            result.insert(v);
+                            dis[v]=dis[root]+1;
+                        }
+                     }
+                    for (auto v: dgraph.GetParentsID(root)){
+                        if(dis[v]>dis[root]+1){
+                            q.push(v);
+                            result.insert(v);
+                            dis[v]=dis[root]+1;
+                        }
+                     }
+             }
+         }
+    }
+
+ void test_bfs_incremental(int circle_num){
+  DualSim dualsim;
+  Graph dgraph,qgraph;
+  GraphLoader dgraph_loader,qgraph_loader;
+  dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
+  int index =query_index;
+  qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
+  int d_Q = cal_diameter_qgraph(qgraph);
+  std::unordered_map<VertexID, std::unordered_set<VertexID>> sim;
+   bool initialized_sim=false;
+   dualsim.dual_simulation(dgraph,qgraph,sim,initialized_sim);
+
+   std::unordered_set<VertexID> max_dual_set;
+   for(auto u:qgraph.GetAllVerticesID()){
+       for(auto v:sim[u]){
+           max_dual_set.insert(v);
+       }
+   }
+   cout<<"Base Graph vertices: "<<dgraph.GetNumVertices()<<"  Base Graph edges: "<<dgraph.GetNumEdges()<<" max_dual_set size: "<<max_dual_set.size()<<" d_Q: "<<d_Q<<endl;
+
+
+    int j=1;
+    while(j<=circle_num){
+          Graph dgraph_inc;
+         GraphLoader dgraphinc_loader;
+         dgraphinc_loader.LoadGraph(dgraph_inc,graph_vfile,graph_efile);
+         std::set<std::pair<VertexID,VertexID>> add_edges,rm_edges,add_edges1;
+         Load_bunch_edges(add_edges,base_add_file,j);
+      //   LoadEdges(add_edges1,basefilename+std::to_string(j));
+         for (auto e:add_edges){
+             dgraph_inc.AddEdge(Edge(e.first,e.second,1));
+         }
+         float sum_direct_time=0.0;
+         float sum_inc_time=0.0;
+         for(auto w: max_dual_set){
+             std::unordered_set<VertexID> ball_node,ball_node1;
+             std::vector<char> dis,dis1;
+             clock_t stime0,etime0,stime1,etime1;
+             stime0=clock();
+             cal_culculate_directed_dhop_nodes(dgraph_inc, w, d_Q, ball_node1,dis1);
+             etime0=clock();
+             sum_direct_time+=(float)(etime0-stime0)/CLOCKS_PER_SEC;
+
+
+             cal_culculate_directed_dhop_nodes(dgraph, w, d_Q, ball_node,dis);
+             stime1=clock();
+             cal_culculate_inc_dhop_nodes_add(dgraph_inc,d_Q,ball_node,dis,add_edges);
+             etime1=clock();
+             sum_inc_time+=(float)(etime1-stime1)/CLOCKS_PER_SEC;
+//             if(!(ball_node.size()==ball_node1.size())){
+//
+//                  for(auto v:ball_node){
+//                       if(ball_node1.find(v)==ball_node1.end()){
+//                           cout<<j<<' '<<w<<' '<<v<<" ball_node size: "<<ball_node.size()<<" ball_node1 size:"<<ball_node1.size()<<' '<<dis[v]<<' '<<dis1[v]<<endl;
+//                       }
+//                  }
+////                  j+=100;
+//             }
+//             cout<<(ball_node.size()==ball_node1.size())<<endl;
+           //  cout<<sum_direct_time<<' '<<sum_inc_time<<endl;
+         }
+         std::cout<<j<<" sum_dirct_time: "<<sum_direct_time<<" sum_inc_time: "<<sum_inc_time<<endl;
+         j+=1;
+    }
+
  }
 private:
     std::string test_data_name ="yago";
@@ -708,7 +934,6 @@ private:
     std::string base_add_affected_center_file ="../data/yago/inc/affectedcenter_adde.txt";
     std::string base_remove_affected_center_file ="../data/yago/inc/affectedcenter_rme.txt";
     int query_index = 1;
-
 };
 
 
@@ -729,12 +954,14 @@ int main(int argc, char *argv[]) {
 //  strongexr.generate_query();
   //strongexr.generate_affected_center(200,0.04);
   //strongexr.generate_outside_center(50000,10);
-  strongexr.test_strongsimulation_inc(20);
-//strongexr.first_strong_strongInc(30);
+ // strongexr.print_affected_center_info_one_by_one(10);
+
  // strongexr.print_affected_center_info(10);
  //strongexr.generate_query(200,5,1000);
- //strongexr.generate_all_random_edges(100000,20);
-  //strongexr.print_evaluate_incremental_information(10);
+// strongexr.generate_all_random_edges(300000,20);
+//  strongexr.test_strong_inc_ball(10);
+strongexr.test_bfs_incremental(20);
+//  strongexr.test_bfs_incremental(20);
   worker_finalize();
   return 0;
 }

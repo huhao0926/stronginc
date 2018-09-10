@@ -283,6 +283,7 @@ void Graph::shortest_distance(VertexID vid,std::unordered_map<VertexID,int> &dis
     //std::unordered_map<VertexID,int> dis;
     std::queue<VertexDescriptor> q;
     //vertex_index_map_
+	//dis.resize(num_vertices_, INT_MAX);
     q.push(u);
     color[vid] = 1;
     dis[vid] = 0;
@@ -327,7 +328,7 @@ const int Graph::shortest_distance(VertexID source_id,VertexID target_id)const{
     VertexDescriptor source_node = vertex(source_id, *graph_);
     VertexDescriptor target_node = vertex(target_id, *graph_);
     std::vector<int> color(num_vertices_,0);
-    std::unordered_map<VertexID,int> dis;
+    std::vector<VertexID> dis(num_vertices_,INT_MAX);
     std::queue<VertexDescriptor> q;
     //vertex_index_map_
     q.push(source_node);
@@ -373,7 +374,7 @@ const int Graph::shortest_distance(VertexID source_id,VertexID target_id)const{
 void Graph::find_hop_nodes(VertexID vid, int d_hop,std::unordered_set<VertexID> &result){
     VertexDescriptor u = vertex(vid, *graph_);
     std::vector<int> color(num_vertices_,0);
-    std::unordered_map<VertexID,int> dis;
+    std::vector<VertexID> dis(num_vertices_,INT_MAX);
     std::queue<VertexDescriptor> q;
    // std::unordered_set<int> result;
     //vertex_index_map_
@@ -459,7 +460,7 @@ void  Graph::find_connectivity_nodes(VertexID vid, std::unordered_set<VertexID> 
 
 void Graph::find_hop_nodes(std::unordered_set<VertexID> &node_set,int d_hop,std::unordered_set<VertexID> &result){
     std::vector<int> color(num_vertices_,0);
-    std::unordered_map<VertexID,int> dis;
+    std::vector<VertexID> dis(num_vertices_,INT_MAX);
     std::queue<VertexDescriptor> q;
   //  std::unordered_set<int> result;
     for(auto vid :node_set){

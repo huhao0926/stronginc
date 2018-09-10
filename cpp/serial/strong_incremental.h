@@ -97,5 +97,17 @@ public:
                                       std::vector<StrongR> &strong_r,
                                       std::set<std::pair<VertexID,VertexID>> &add_edges,
                                       std::set<std::pair<VertexID,VertexID>> &rm_edges);
+
+
+    bool ball_dhop_the_same(std::unordered_set<VertexID>& direct_ball,std::unordered_set<VertexID> &inc_ball);
+
+    void cal_culculate_inc_dhop_nodes_add(Graph& dgraph,int d_Q,std::unordered_set<VertexID> &result,std::vector<int>  &dis,std::set<std::pair<VertexID,VertexID>> &add_edges);
+
+    void strong_simulation_inc_add(Graph &dgraph, Graph &qgraph,
+                                      std::unordered_map<VertexID,std::unordered_set<VertexID>> &dsim,
+                                      std::vector<StrongR> &strong_r,
+                                      std::set<std::pair<VertexID,VertexID>> &add_edges,
+                                      std::unordered_map<VertexID,std::unordered_set<VertexID>> &ball_dhop_info,
+                                      std::unordered_map<VertexID,std::vector<int>> &ball_dis_info);
 };
 #endif //CPP_STRONGSIMULATION_INC_H_
