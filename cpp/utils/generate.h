@@ -37,6 +37,8 @@ public:
 
     void generate_connect_graphs_by_Dgraph(Graph &dgraph, Graph &qgraph,const  int num_nodes);
 
+    void generate_view_by_Qgraph(Graph &dgraph,Graph &viewgraph,int num_nodes);
+
     void save_grape_file(Graph &qgraph, const std::string &v_file, const std::string &e_file);
 
     std::unordered_set<VertexID> get_dual_node_result(Graph &dgraph,Graph &qgraph);

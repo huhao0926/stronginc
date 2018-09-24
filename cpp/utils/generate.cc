@@ -189,6 +189,60 @@ void Generate::generate_connect_graphs_by_Dgraph(Graph &dgraph, Graph &qgraph,co
     return ;
 }
 
+void Generate::generate_view_by_Qgraph(Graph &dgraph,Graph &viewgraph,int num_nodes){
+    std::vector<Vertex> vertices;
+    std::vector<Edge> edges;
+   // bool continue_select_root = true;
+    if(dgraph.GetNumVertices()<num_nodes){
+        std::cerr<<"wrong num_nodes"<<endl;
+        return ;
+    }
+
+ //   while(continue_select_root){
+        std::vector<VertexID> vertex_list;
+       // std::unordered_set<VertexID> vertex_set;
+        VertexID root_id = random(0,dgraph.GetNumVertices()-1);
+        vertex_list.push_back(root_id);
+
+        int generate_node_num=1;
+        while(generate_node_num<num_nodes){
+            int root_index=random(0,vertex_list.size()-1);
+            VertexID root=vertex_list[root_index];
+
+            std::vector<VertexID>  neighbor_vertex;
+            for(auto des_w:dgraph.GetChildrenID(root)){
+                if (std::find(vertex_list.begin(),vertex_list.end(),des_w) == vertex_list.end()){
+                    neighbor_vertex.push_back(des_w);
+                }
+            }
+            for(auto pre_w :dgraph.GetParentsID(root)){
+                if (std::find(vertex_list.begin(),vertex_list.end(),pre_w) == vertex_list.end()){
+                    neighbor_vertex.push_back(pre_w);
+                }
+            }
+            if(neighbor_vertex.size()==0){
+                continue;
+            }
+            int next_node_index=random(0,neighbor_vertex.size()-1);
+            vertex_list.push_back(neighbor_vertex[next_node_index]);
+            generate_node_num++;
+        }
+ //   }
+    for (int i= 0 ;i < num_nodes ;i++){
+        vertices.emplace_back(i, dgraph.GetVertexLabel(vertex_list[i]));
+    }
+    for(int i = 0 ;i<num_nodes;i++){
+        for(int j =0;j<num_nodes;j++){
+            if (dgraph.ExistEdge(vertex_list[i],vertex_list[j])){
+                edges.emplace_back(i,j,1);
+            }
+        }
+    }
+    GraphLoader viewgraph_loader;
+    viewgraph_loader.LoadGraph(viewgraph,vertices,edges);
+    return ;
+}
+
 void Generate::save_grape_file(Graph &qgraph, const std::string &v_file, const std::string &e_file){
    std::fstream out_vfile(v_file,std::ios::out);
    if(!out_vfile)

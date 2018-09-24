@@ -8,6 +8,7 @@
 #include "cpp/core/strongr.h"
 #include "ball_view.h"
 #include "cpp/serial/strongsimulation.h"
+#include <sys/time.h>
 #include<ctime>
 #include<unordered_map>
 #include<unordered_set>
@@ -36,7 +37,7 @@ public:
     bool containCheck(Graph &qgraph);
 
     std::vector<int> minContain(Graph &qgraph);
-
+/*
     std::unordered_map<int,std::vector<StrongR>> cache_by_strong(Graph &dgraph,std::vector<int> &min_contain_vec);
 
     std::unordered_map<int,std::unordered_map<int,std::unordered_set<VertexID>>> cache_by_dual(Graph &dgraph,std::vector<int> &min_contain_vec);
@@ -44,10 +45,24 @@ public:
     void deal_dual_cache(Graph &qgraph,std::vector<int> &min_contain_vec,std::unordered_map<int,std::unordered_map<int,std::unordered_set<VertexID>>> &result,std::unordered_map<VertexID, std::unordered_set<VertexID>> &max_query_sim, std::unordered_set<VertexID> &view_nodes);
 
     void deal_strong_cache(Graph &qgraph,std::vector<int> &min_contain_vec,std::unordered_map<int,std::vector<StrongR>> &result,std::unordered_map<VertexID, std::unordered_set<VertexID>> &max_query_sim, std::unordered_set<VertexID> &view_nodes);
-
+*/
     void cache_node_distance(Graph &dgraph,std::unordered_set<VertexID> &ball_node,std::unordered_map<VertexID,std::unordered_map<VertexID,int>> &dis_ball);
 
-    std::vector<StrongR>  queryByViews(Graph &dgraph,Graph &qgraph,int flag=0);
+    double get_current_time();
+
+    void material_view(Graph &dgraph,Graph &qgraph,
+                                     std::unordered_map<int,std::unordered_map<int,std::unordered_set<VertexID>>> &dual_result,
+                                     std::unordered_map<int,std::vector<StrongR>> &strong_result,
+                                     std::unordered_map<VertexID,std::unordered_map<VertexID,int>> &dis_ball,
+                                     int cache_strategy);
+
+    void deal_cache_info(Graph &dgraph,Graph &qgraph,std::unordered_map<int,std::unordered_map<int,std::unordered_set<VertexID>>> &dual_result,
+                                     std::unordered_map<int,std::vector<StrongR>> &strong_result,
+                                     std::unordered_map<VertexID,std::unordered_map<VertexID,int>> &dis_ball,
+                                     int cache_strategy,
+                                     std::vector<StrongR> &max_result);
+
+    std::vector<StrongR>  queryByViews(Graph &dgraph,Graph &qgraph, int cache_strategy);
 
     int cal_diameter_qgraph(Graph &qgraph);
 

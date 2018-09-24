@@ -308,7 +308,7 @@ public:
     void generate_query_view(int generate_view_nodes){
         int index = 1;
         Generate generate;
-        while(index<=200){
+        while(index<=199){
             Graph qgraph;
             View vie;
             GraphLoader qgraph_loader;
@@ -322,7 +322,8 @@ public:
             for(int i=1;i<6;++i){
                 GraphLoader view_loader;
                 Graph* new_view = new Graph();
-                generate.generate_connect_graphs_by_Dgraph(qgraph,*new_view,generate_view_nodes);
+                generate.generate_view_by_Qgraph(qgraph,*new_view,generate_view_nodes);
+               // generate.generate_connect_graphs_by_Dgraph(qgraph,*new_view,generate_view_nodes);
                 vie.add_ViewGraph(new_view);
             }
 
@@ -391,51 +392,56 @@ public:
         return result;
     }
 
-    void test_view_query_one(){
+    int get_dual_result_num(Graph &dgraph,Graph &qgraph){
+        std::unordered_set<VertexID> result;
+        DualSim dualsim;
+        std::unordered_map<VertexID, std::unordered_set<VertexID>>  sim;
+        bool initialized_sim = false;
+        dualsim.dual_simulation(dgraph,qgraph,sim,initialized_sim);
+        for(auto u:qgraph.GetAllVerticesID()){
+            for(auto v:sim[u]){
+                result.insert(v);
+            }
+        }
+        return result.size();
+    }
+
+    void print_view_info(int circle_num,std::string view_info_text="view_result_number.txt"){
         Graph dgraph;
         GraphLoader dgraph_loader,qgraph_loader;
         dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
         cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<endl;
-        int index=query_index;
-        Graph qgraph;
-        qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
-        View vie;
-        for(int i=1;i<6;++i){
+
+        int index=1;
+        std::fstream outfile(view_info_text,std::ios::out);
+        while(index<=circle_num){
+            Graph qgraph;
+            qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
+            std::fstream outfile(view_info_text,std::ios::app);
+            int n=get_dual_result_num(dgraph,qgraph);
+            outfile<<n;
+            View vie;
+            for(int i=1;i<6;++i){
                 GraphLoader view_loader;
                 Graph* new_view = new Graph();
                 view_loader.LoadGraph(*new_view,get_view_vfile(index,i),get_view_efile(index,i));
                 vie.add_ViewGraph(new_view);
+                n=get_dual_result_num(dgraph,*new_view);
+                outfile<<'\t'<<n;
+            }
+            outfile<<endl;
+            outfile.close();
+        std::cout<<"query view combination: "<<index<<endl;
+        index+=1;
         }
-        clock_t view_stime=clock();
-        std::vector<StrongR> view_strong_result = vie.queryByViews(dgraph,qgraph,0);
-        clock_t view_etime=clock();
-        std::cout<<"calculate view strong"<<(float)(view_etime-view_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
-
-        StrongSim strongs;
-        clock_t direct_stime=clock();
-//        vector<StrongR> direct_strong_result;
-        vector<StrongR> direct_strong_result= strongs.strong_simulation_sim(dgraph,qgraph);
-        clock_t direct_etime=clock();
-        std::cout<<"calculate direct strong"<<(float)(direct_etime-direct_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
-        cout<<view_strong_result.size()<<' '<<direct_strong_result.size()<<endl;
-        vector<float> compare_rate = compare_direct_and_view_strongresult(qgraph,direct_strong_result,view_strong_result);
-        int same_count=0;
-        int appoximate_count=0;
-        for(auto f:compare_rate){
-               if(f==1){
-                   same_count+=1;
-               }else{
-                   appoximate_count+=1;
-               }
-       }
-       cout<<"same_count: "<<same_count<<" appoxiamte_count : "<<appoximate_count<<endl;
     }
-    void test_view_query_all(int circle_num){
+
+    void test_view_query_all(int circle_num,int flag0){
         Graph dgraph;
         GraphLoader dgraph_loader,qgraph_loader;
         dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
         cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<endl;
-        int index=2;
+        int index=1;
         while(index<=circle_num){
         Graph qgraph;
         qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
@@ -447,7 +453,7 @@ public:
                 vie.add_ViewGraph(new_view);
         }
         clock_t view_stime=clock();
-        std::vector<StrongR> view_strong_result = vie.queryByViews(dgraph,qgraph,0);//0 means answer using cache dual_simulation ,1 means answer using cache strong simulaton
+        std::vector<StrongR> view_strong_result = vie.queryByViews(dgraph,qgraph,flag0);//0 means answer using cache dual_simulation ,1 means answer using cache strong simulaton
         clock_t view_etime=clock();
         std::cerr<<"calculate view strong"<<(float)(view_etime-view_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
 
@@ -504,8 +510,8 @@ int main(int argc, char *argv[]) {
 //  serial.test_add_edges();
 
 //    serial.generate_query_view(3);
-//    serial.test_view_query_one();
-    serial.test_view_query_all(20);
+//   serial.print_view_info(199);
+  serial.test_view_query_all(199,0);
     //serial.test_view_query();
 //  worker_finalize();
   return 0;
