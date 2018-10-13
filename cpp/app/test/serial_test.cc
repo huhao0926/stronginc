@@ -90,6 +90,32 @@ public:
       }
   }
 
+  void test_generate_query(int generate_query_nums,int generate_query_nodes, int generate_query_edges, int max_calculate_center_nodes){
+      Graph dgraph;
+      Generate generate;
+      GraphLoader dgraph_loader;
+      dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
+      std::cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<std::endl;
+      int i=1;
+      while(i<=generate_query_nums){
+          Graph qgraph;
+          //generate.generate_connect_graphs_by_Dgraph(dgraph,qgraph,generate_query_nodes);
+          generate.generate_view_by_Qgraph(dgraph,qgraph,generate_query_nodes);
+          int d_Q=cal_diameter_qgraph(qgraph);
+          if(d_Q>2 || !query_labl_all_notsame(qgraph) || qgraph.GetNumEdges()!=generate_query_edges){
+              continue;
+          }
+          clock_t s0,e0;
+          s0 =clock();
+          std::unordered_set<VertexID> max_dual_set = generate.get_dual_node_result(dgraph,qgraph);
+          e0 =clock();
+          if(max_dual_set.size()<=max_calculate_center_nodes){
+           //   generate.save_grape_file(qgraph,get_query_vfile(i),get_query_efile(i));
+              std::cout<<i<<' '<<"calculate dual time"<<(float)(e0-s0)/CLOCKS_PER_SEC<<"s"<<' '<<max_dual_set.size()<<std::endl;
+              i++;
+          }
+      }
+  }
   void test_print_graph_label_set(){
       Graph dgraph;
       GraphLoader dgraph_loader;
@@ -499,8 +525,9 @@ int main(int argc, char *argv[]) {
   google::InitGoogleLogging("test for working");
   google::ShutdownGoogleLogging();
 //  init_workers();
-//  Serial serial("dbpedia",1);
-  Serial serial("yago",3);
+  Serial serial("dbpedia",1);
+  serial.test_generate_query(200,5,7,1000);
+//  Serial serial("yago",3);
 //  serial.test_generate_random_connect_graph(5,10,5,10);
   //serial.generate_random_dgraph(100,1.20,5);
   //serial.generate_query(200,5,40);
@@ -511,7 +538,7 @@ int main(int argc, char *argv[]) {
 
 //    serial.generate_query_view(3);
 //   serial.print_view_info(199);
-  serial.test_view_query_all(199,0);
+ // serial.test_view_query_all(199,0);
     //serial.test_view_query();
 //  worker_finalize();
   return 0;
