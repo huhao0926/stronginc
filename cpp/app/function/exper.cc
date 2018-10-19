@@ -441,7 +441,7 @@ int main(int argc, char *argv[]) {
   init_workers();
   string base_name="liveJournal";
   ExperExr experExr(base_name,3);
-  experExr.generate_query_base_dgraph(5,1500,20);
+  //experExr.generate_query_base_dgraph(5,1500,20);
   //experExr.generate_all_random_edges(100000,10);
   //experExr.generate_query_random(5,10,2,10000,0,5);
   // experExr.test_bunch_add_edges(10);

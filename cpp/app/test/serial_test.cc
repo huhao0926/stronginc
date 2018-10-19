@@ -16,13 +16,19 @@
 #include<iostream>
 #include <fstream>
 #include<ctime>
-
+#include <sys/time.h>
 #include<boost/filesystem.hpp>
 #define random(a,b) (rand()%(b-a+1)+a)
 
 
 class Serial{
 public:
+   double get_current_time() {
+	timeval t;
+	gettimeofday(&t, 0);
+	return (double) t.tv_sec + (double) t.tv_usec / 1000000;
+    }
+
     Serial(){}
 
     Serial(std::string test_data_name,int query_index){
@@ -102,20 +108,21 @@ public:
           //generate.generate_connect_graphs_by_Dgraph(dgraph,qgraph,generate_query_nodes);
           generate.generate_view_by_Qgraph(dgraph,qgraph,generate_query_nodes);
           int d_Q=cal_diameter_qgraph(qgraph);
-          if(d_Q>2 || !query_labl_all_notsame(qgraph) || qgraph.GetNumEdges()!=generate_query_edges){
+          if(d_Q!=4 || qgraph.GetNumEdges()!=generate_query_edges){
               continue;
           }
-          clock_t s0,e0;
-          s0 =clock();
+          double s0=get_current_time();
           std::unordered_set<VertexID> max_dual_set = generate.get_dual_node_result(dgraph,qgraph);
-          e0 =clock();
+          double e0=get_current_time();
+
           if(max_dual_set.size()<=max_calculate_center_nodes){
-           //   generate.save_grape_file(qgraph,get_query_vfile(i),get_query_efile(i));
-              std::cout<<i<<' '<<"calculate dual time"<<(float)(e0-s0)/CLOCKS_PER_SEC<<"s"<<' '<<max_dual_set.size()<<std::endl;
+              generate.save_grape_file(qgraph,get_query_vfile(i),get_query_efile(i));
+              std::cout<<i<<" query nodes: "<<qgraph.GetNumVertices()<<' '<<" query edges: "<<qgraph.GetNumEdges()<<" "<<"d_Q: "<<d_Q<<" max_dual_set: "<<max_dual_set.size()<<" times: "<<e0-s0<<std::endl;
               i++;
           }
       }
   }
+
   void test_print_graph_label_set(){
       Graph dgraph;
       GraphLoader dgraph_loader;
@@ -305,23 +312,49 @@ public:
    }
  }
 
-    void test_view_contain(){
+    void test_view_minimum_contain(){
         int index=1;
         while(index<200){
             Graph qgraph;
-            View vie;
+            //View vie;
             GraphLoader qgraph_loader;
-            std::string q_vfile="../data/contain1/data"+std::to_string(index)+"/q.v";
-            std::string q_efile="../data/contain1/data"+std::to_string(index)+"/q.e";
-            qgraph_loader.LoadGraph(qgraph,q_vfile,q_efile);
+            qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
+            View vie;
             for(int i=1;i<6;++i){
                 GraphLoader view_loader;
                 Graph* new_view = new Graph();
-                view_loader.LoadGraph(*new_view,"../data/contain1/data"+std::to_string(index)+"/view"+std::to_string(i)+".v","../data/contain1/data"+std::to_string(index)+"/view"+std::to_string(i)+".e");
+                view_loader.LoadGraph(*new_view,get_view_vfile(index,i),get_view_efile(index,i));
                 vie.add_ViewGraph(new_view);
             }
             vie.containCheck(qgraph);
-            std::vector<int> result=vie.minContain(qgraph);
+            std::vector<int> result=vie.minimumContain(qgraph);
+            std::cout<<index<<" minimum contain: ";
+            for(auto num:result){
+               std::cout<<num<<' ';
+            }
+            std::cout<<endl;
+//            vie.traverse_ViewGraph();
+            index+=1;
+        }
+}
+
+    void test_view_minimal_contain(){
+        int index=1;
+        while(index<200){
+            Graph qgraph;
+            //View vie;
+            GraphLoader qgraph_loader;
+            qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
+            View vie;
+            for(int i=1;i<6;++i){
+                GraphLoader view_loader;
+                Graph* new_view = new Graph();
+                view_loader.LoadGraph(*new_view,get_view_vfile(index,i),get_view_efile(index,i));
+                vie.add_ViewGraph(new_view);
+            }
+            vie.containCheck(qgraph);
+            std::vector<int> result=vie.minimalContain(qgraph);
+            std::cout<<index<<" minimal contain: ";
             for(auto num:result){
                std::cout<<num<<' ';
             }
@@ -355,7 +388,7 @@ public:
 
             bool is_contain = vie.containCheck(qgraph);
             if(is_contain){
-                std::vector<int> result=vie.minContain(qgraph);
+                std::vector<int> result=vie.minimumContain(qgraph);
 //                if(result.size()==3){
 //                    continue;
 //                }
@@ -462,7 +495,7 @@ public:
         }
     }
 
-    void test_view_query_all(int circle_num,int flag0){
+    void test_view_query_all(int circle_num,int flag0,int flag1){//flag0=0 means do not cache node distance,//flag1==0 means minimum contain,flag1=1 means minimalcontain
         Graph dgraph;
         GraphLoader dgraph_loader,qgraph_loader;
         dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
@@ -478,17 +511,17 @@ public:
                 view_loader.LoadGraph(*new_view,get_view_vfile(index,i),get_view_efile(index,i));
                 vie.add_ViewGraph(new_view);
         }
-        clock_t view_stime=clock();
-        std::vector<StrongR> view_strong_result = vie.queryByViews(dgraph,qgraph,flag0);//0 means answer using cache dual_simulation ,1 means answer using cache strong simulaton
-        clock_t view_etime=clock();
-        std::cerr<<"calculate view strong"<<(float)(view_etime-view_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
+        double view_stime=get_current_time();
+        std::vector<StrongR> view_strong_result = vie.queryByViews(dgraph,qgraph,flag0,flag1);//0 means answer using cache dual_simulation ,1 means answer using cache strong simulaton
+        double view_etime=get_current_time();
+        std::cerr<<"calculate view strong"<<view_etime-view_stime<<"s"<<std::endl;
 
         StrongSim strongs;
-        clock_t direct_stime=clock();
+        double direct_stime=get_current_time();
 //        vector<StrongR> direct_strong_result;
         vector<StrongR> direct_strong_result= strongs.strong_simulation_sim(dgraph,qgraph);
-        clock_t direct_etime=clock();
-        std::cerr<<"calculate direct strong"<<(float)(direct_etime-direct_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
+        double direct_etime=get_current_time();
+        std::cout<<"calculate direct strong"<<direct_etime-direct_stime<<"s"<<std::endl;
        // cout<<view_strong_result.size()<<' '<<direct_strong_result.size()<<endl;
         vector<float> compare_rate = compare_direct_and_view_strongresult(qgraph,direct_strong_result,view_strong_result);
         int same_count=0;
@@ -506,6 +539,49 @@ public:
        }
     }
 
+    void test_view_query_one(int query_index,int flag0,int flag1){//flag0=0 means do not cache node distance,//flag1==0 means minimum contain,flag1=1 means minimalcontain
+        Graph dgraph;
+        GraphLoader dgraph_loader,qgraph_loader;
+        dgraph_loader.LoadGraph(dgraph,graph_vfile,graph_efile);
+        cout<<dgraph.GetNumVertices()<<' '<<dgraph.GetNumEdges()<<endl;
+        int index=query_index;
+        //while(index<=circle_num){
+        Graph qgraph;
+        qgraph_loader.LoadGraph(qgraph,get_query_vfile(index),get_query_efile(index));
+        View vie;
+        for(int i=1;i<6;++i){
+                GraphLoader view_loader;
+                Graph* new_view = new Graph();
+                view_loader.LoadGraph(*new_view,get_view_vfile(index,i),get_view_efile(index,i));
+                vie.add_ViewGraph(new_view);
+        }
+        double view_stime=get_current_time();
+        std::vector<StrongR> view_strong_result = vie.queryByViews(dgraph,qgraph,flag0,flag1);//0 means answer using cache dual_simulation ,1 means answer using cache strong simulaton
+        double view_etime=get_current_time();
+        std::cout<<"calculate view strong"<<view_etime-view_stime<<"s"<<std::endl;
+
+        StrongSim strongs;
+        double direct_stime=get_current_time();
+//        vector<StrongR> direct_strong_result;
+        vector<StrongR> direct_strong_result= strongs.strong_simulation_sim(dgraph,qgraph);
+        double direct_etime=get_current_time();
+        std::cout<<"calculate direct strong"<<direct_etime-direct_stime<<"s"<<std::endl;
+       // cout<<view_strong_result.size()<<' '<<direct_strong_result.size()<<endl;
+        vector<float> compare_rate = compare_direct_and_view_strongresult(qgraph,direct_strong_result,view_strong_result);
+        int same_count=0;
+        int appoximate_count=0;
+        int center_none_result=direct_strong_result.size()-view_strong_result.size();
+        for(auto f:compare_rate){
+               if(f==1){
+                   same_count+=1;
+               }else{
+                   appoximate_count+=1;
+               }
+       }
+       cout<<index<<" same_count: "<<same_count<<" appoxiamte_count : "<<appoximate_count<<" none result count: "<<center_none_result<<" accuracy rate : "<<(float)same_count*1.0/(same_count+appoximate_count+center_none_result)<<endl;
+      // index+=1;
+      // }
+    }
 private:
     int query_index = 1;
     std::string test_data_name ="yago";
@@ -525,9 +601,9 @@ int main(int argc, char *argv[]) {
   google::InitGoogleLogging("test for working");
   google::ShutdownGoogleLogging();
 //  init_workers();
-  Serial serial("dbpedia",1);
-  serial.test_generate_query(200,5,7,1000);
-//  Serial serial("yago",3);
+ // Serial serial("dbpedia",1);
+ // serial.test_generate_query(200,5,7,1000);
+  Serial serial("yago",3);
 //  serial.test_generate_random_connect_graph(5,10,5,10);
   //serial.generate_random_dgraph(100,1.20,5);
   //serial.generate_query(200,5,40);
@@ -536,9 +612,13 @@ int main(int argc, char *argv[]) {
 //  serial.test_strongsimulation();
 //  serial.test_add_edges();
 
-//    serial.generate_query_view(3);
+
+    serial.test_view_minimum_contain();
+    //serial.generate_query_view(3);
+  //  serial.test_view_query_one(49,1,0);
 //   serial.print_view_info(199);
- // serial.test_view_query_all(199,0);
+    //serial.test_generate_query(200,6,12,2000);
+  //serial.test_view_query_all(49,1,0);
     //serial.test_view_query();
 //  worker_finalize();
   return 0;

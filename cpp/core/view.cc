@@ -101,7 +101,7 @@ bool View::containCheck(Graph &qgraph){
     return true;
 }
 
-std::vector<int> View::minContain(Graph &qgraph){
+std::vector<int> View::minimumContain(Graph &qgraph){
     std::unordered_set<Edge> tmp;//current match graph
     std::unordered_set<Edge> rem;//uncovered edge set
     std::vector<int> ans;
@@ -130,12 +130,62 @@ std::vector<int> View::minContain(Graph &qgraph){
        if(!pos.empty()){
            rem=diff(rem,pos);
            ans.push_back(pos_index);
+       }else{
+           break;
        }
        tmp.clear();
     }
     return ans;
 }
 
+
+std::vector<int> View::minimalContain(Graph &qgraph){
+    //std::cout<<"come in minimal"<<std::endl;
+    std::unordered_set<Edge> rem;//uncovered edge set
+    for(auto e:qgraph.GetAllEdges()){
+        rem.insert(e);
+    }
+    std::vector<int> record_view_set;
+    std::vector<int> ans;
+    //std::unordered_set<Edge> S;
+    std::unordered_set<Edge> E;
+    std::unordered_map<Edge,std::unordered_set<int>> M;
+    for(int i=0;i<MGSet.size();++i){
+        std::unordered_set<Edge> eset = MGSet[i];
+        if(!eset.empty()){
+            record_view_set.push_back(i);
+           // S=unions(S,eset);
+            E=unions(E,eset);
+            for(auto e:eset){
+                M[e].insert(i);
+            }
+        }
+        if(E.size()==rem.size()){
+           break;
+        }
+    }
+    if(E.size()!=rem.size()){
+       //vector<int> result;
+       return ans;
+    }
+    for(auto num:record_view_set){
+       bool is_unique=false;
+       for(auto e:MGSet[num]){
+           if(M[e].size()==1){
+               is_unique=true;
+               break;
+           }
+       }
+       if(!is_unique){
+           for(auto e:MGSet[num]){
+               M[e].erase(num);
+           }
+       }else{
+           ans.push_back(num);
+       }
+    }
+    return ans;
+}
 /*
 std::unordered_map<int,std::vector<StrongR>> View::cache_by_strong(Graph &dgraph,std::vector<int> &min_contain_vec){
     std::unordered_map<int,std::vector<StrongR>> result;
@@ -247,14 +297,20 @@ void View::material_view(Graph &dgraph,Graph &qgraph,
                                      std::unordered_map<int,std::unordered_map<int,std::unordered_set<VertexID>>> &dual_result,
                                      std::unordered_map<int,std::vector<StrongR>> &strong_result,
                                      std::unordered_map<VertexID,std::unordered_map<VertexID,int>> &dis_ball,
-                                     int cache_strategy){
+                                     int cache_strategy,
+                                     int query_strategy){
 
     std::unordered_set<VertexID> view_nodes;
     bool is_contain = containCheck(qgraph);
     if(!is_contain){
         return ;
     }
-    std::vector<int> min_contain_vec = minContain(qgraph);
+    std::vector<int> min_contain_vec;
+    if(query_strategy==0){
+        min_contain_vec=minimumContain(qgraph);
+    }else if(query_strategy==1){
+        min_contain_vec=minimalContain(qgraph);
+    }
     //cache dual_result
     for(auto num:min_contain_vec){
         DualSim dualsim;
@@ -286,8 +342,12 @@ void View::material_view(Graph &dgraph,Graph &qgraph,
         LOG(INFO)<<" strategy do not cache node distance----> "<<"view_nodes size: "<<view_nodes.size()<<std::endl;
         return ;
     }
-   cache_node_distance(dgraph,view_nodes,dis_ball);
-   LOG(INFO)<<" finish cache node distance----> "<<"view_nodes size: "<<view_nodes.size()<<std::endl;
+
+    Generate generate;
+    std::unordered_set<VertexID> cache_nodes=generate.get_dual_node_result(dgraph,qgraph);
+    cache_node_distance(dgraph,cache_nodes,dis_ball);
+   //cache_node_distance(dgraph,view_nodes,dis_ball);
+   LOG(INFO)<<" finish cache node distance----> "<<"cache_nodes size: "<<cache_nodes.size()<<std::endl;
 }
 
 
@@ -295,12 +355,20 @@ void View::deal_cache_info(Graph &dgraph,Graph &qgraph,std::unordered_map<int,st
                                      std::unordered_map<int,std::vector<StrongR>> &strong_result,
                                      std::unordered_map<VertexID,std::unordered_map<VertexID,int>> &dis_ball,
                                      int cache_strategy,
+                                     int query_strategy,
                                      std::vector<StrongR> &max_result){
     bool is_contain = containCheck(qgraph);
     if(!is_contain){
         return ;
     }
-    std::vector<int> min_contain_vec = minContain(qgraph);
+
+    std::vector<int> min_contain_vec;
+    if(query_strategy==0){
+        min_contain_vec=minimumContain(qgraph);
+    }else if(query_strategy==1){
+        min_contain_vec=minimalContain(qgraph);
+    }
+
 
     std::unordered_map<VertexID, std::unordered_set<VertexID>> max_query_sim;
     std::unordered_set<VertexID> view_nodes;
@@ -309,6 +377,7 @@ void View::deal_cache_info(Graph &dgraph,Graph &qgraph,std::unordered_map<int,st
         max_query_sim[u] = std::unordered_set<VertexID>();
     }
 
+    double create_view_s0=get_current_time();
     for(auto num:min_contain_vec){
         DualSim dualsim;
         std::unordered_map<VertexID, std::unordered_set<VertexID>>  sim;
@@ -340,14 +409,21 @@ void View::deal_cache_info(Graph &dgraph,Graph &qgraph,std::unordered_map<int,st
         }
     }
     Ball_View graph_view(view_nodes,view_edges);
-
-    LOG(INFO)<<" create view graph----> "<<"view graph nodes: "<<view_nodes.size()<<" view graph edges : "<<view_edges.size()<<std::endl;
+    double create_view_s1=get_current_time();
+    LOG(INFO)<<" create view graph----> "<<"view graph nodes: "<<view_nodes.size()<<" view graph edges : "<<view_edges.size()<<" create view times: "<<create_view_s1-create_view_s0<<"s"<<std::endl;
 
     int d_Q = cal_diameter_qgraph(qgraph);
     dual_filter_match(graph_view,qgraph,max_query_sim);
+
+    std::unordered_set<VertexID> max_dual_set;
+    for(auto u :qgraph.GetAllVerticesID()){
+        for(auto v:max_query_sim[u]){
+            max_dual_set.insert(v);
+        }
+    }
     //print_sim_vertex_result(qgraph,max_query_sim);
-    for (auto w : dgraph.GetAllVerticesID()){
-        if(!valid_sim_w(qgraph,max_query_sim,w)){
+    for (auto w : view_nodes){
+        if(max_dual_set.find(w)==max_dual_set.end()){
             continue;
         }
        /**
@@ -357,7 +433,7 @@ void View::deal_cache_info(Graph &dgraph,Graph &qgraph,std::unordered_map<int,st
        if(cache_strategy==0){
            graph_view.find_hop_nodes(w,d_Q,ball_node);
        }else{
-            for(auto v:view_nodes){
+            for(auto v:max_dual_set){
                 if(dis_ball[w][v]<=d_Q){
                     ball_node.insert(v);
                 }
@@ -416,25 +492,30 @@ double View::get_current_time() {
 	return (double) t.tv_sec + (double) t.tv_usec / 1000000;
 }
 
-std::vector<StrongR>  View::queryByViews(Graph &dgraph,Graph &qgraph, int cache_strategy){
+std::vector<StrongR>  View::queryByViews(Graph &dgraph,Graph &qgraph, int cache_strategy,int query_strategy){
     std::unordered_map<int,std::unordered_map<int,std::unordered_set<VertexID>>> dual_result;
     std::unordered_map<int,std::vector<StrongR>> strong_result;
     std::unordered_map<VertexID,std::unordered_map<VertexID,int>> dis_ball;
 
     clock_t cache_stime=clock();
-    material_view(dgraph,qgraph,dual_result,strong_result,dis_ball,cache_strategy);
+    material_view(dgraph,qgraph,dual_result,strong_result,dis_ball,cache_strategy,query_strategy);
     clock_t cache_etime=clock();
     LOG(INFO)<<"cache views result time: "<<(double)(cache_etime-cache_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
 
     std::vector<StrongR> result;
    // clock_t query_stime=clock_t();
     double query_stime=get_current_time();
-    deal_cache_info(dgraph,qgraph,dual_result,strong_result,dis_ball,cache_strategy,result);
+    deal_cache_info(dgraph,qgraph,dual_result,strong_result,dis_ball,cache_strategy,query_strategy,result);
     double query_etime=get_current_time();
    // clock_t query_etime=clock_t();
  //   LOG(INFO)<<"query by  views result time: "<<(double)(query_etime-query_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
   //  std::cout<<"query by  views result time: "<<(double)(query_etime-query_stime)/CLOCKS_PER_SEC<<"s"<<std::endl;
-    std::cout<<"query by  views result time: "<<(query_etime-query_stime)<<"s"<<std::endl;
+   if(query_strategy==0){
+       std::cout<<"query by  views minimum result time: "<<(query_etime-query_stime)<<"s"<<std::endl;
+   }else{
+       std::cout<<"query by  views minimal result time: "<<(query_etime-query_stime)<<"s"<<std::endl;
+   }
+
     return result;
 }
 

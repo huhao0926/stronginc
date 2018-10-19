@@ -192,14 +192,14 @@ void Generate::generate_connect_graphs_by_Dgraph(Graph &dgraph, Graph &qgraph,co
 void Generate::generate_view_by_Qgraph(Graph &dgraph,Graph &viewgraph,int num_nodes){
     std::vector<Vertex> vertices;
     std::vector<Edge> edges;
-   // bool continue_select_root = true;
+    bool continue_select_root = true;
     if(dgraph.GetNumVertices()<num_nodes){
         std::cerr<<"wrong num_nodes"<<endl;
         return ;
     }
-
- //   while(continue_select_root){
-        std::vector<VertexID> vertex_list;
+    std::vector<VertexID> vertex_list;
+    while(continue_select_root){
+       vertex_list.clear();
        // std::unordered_set<VertexID> vertex_set;
         VertexID root_id = random(0,dgraph.GetNumVertices()-1);
         vertex_list.push_back(root_id);
@@ -221,13 +221,16 @@ void Generate::generate_view_by_Qgraph(Graph &dgraph,Graph &viewgraph,int num_no
                 }
             }
             if(neighbor_vertex.size()==0){
-                continue;
+                break;
             }
             int next_node_index=random(0,neighbor_vertex.size()-1);
             vertex_list.push_back(neighbor_vertex[next_node_index]);
             generate_node_num++;
         }
- //   }
+        if(vertex_list.size()==num_nodes){
+            continue_select_root=false;
+        }
+    }
     for (int i= 0 ;i < num_nodes ;i++){
         vertices.emplace_back(i, dgraph.GetVertexLabel(vertex_list[i]));
     }
